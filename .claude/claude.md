@@ -1,541 +1,815 @@
 # Credit Risk Monitoring System - Claude Code Configuration
 
 ## Project Overview
-An automated credit risk monitoring system that collects news from multiple sources, analyzes credit-relevant events using NLP/LLM, and generates actionable alerts for financial institutions to monitor obligors (borrowers/counterparties).
+Automated credit risk monitoring system using NLP/LLM to analyze financial news and generate alerts for portfolio managers.
 
-**Core Value Proposition**: Banks and hedge funds need early warning systems for credit events (downgrades, defaults, fraud, liquidity issues) across thousands of obligors. Manual monitoring doesn't scale.
+**Problem**: Banks monitor thousands of obligors. Manual news scanning doesn't scale.  
+**Solution**: Automated pipeline: News Collection → NLP Analysis → RAG Summarization → Alerts → Dashboard
 
-## System Architecture
-
+## Quick Architecture
 ```
-News Sources (APIs/Scrapers)
-    ↓
-Data Ingestion Pipeline (Python + Airflow/Prefect)
-    ↓
-PostgreSQL (raw articles) + Text Processing (spaCy, transformers)
-    ↓
-Risk Analysis Layer
-    ├─ Sentiment Analysis (FinBERT)
-    ├─ NER (company/ticker extraction)
-    ├─ Credit-Relevance Classification (rule-based + LLM)
-    └─ Event Categorization (downgrade, default, fraud, etc.)
-    ↓
-Vector Database (Qdrant/pgvector) + Embeddings
-    ↓
-RAG System (LangChain/LlamaIndex)
-    ├─ Retrieve relevant news chunks
-    ├─ LLM Summarization (OpenAI/Anthropic)
-    └─ Structured Risk Metadata
-    ↓
-Alert System + FastAPI Backend
-    ↓
-Dashboard (Streamlit/Dash)
+News APIs/Scrapers → PostgreSQL + Text Processing → Risk Analysis (FinBERT, NER, Classification)
+→ Vector DB + RAG → Alerts → FastAPI + Streamlit Dashboard
 ```
 
-## Technology Stack
-
-### Data Collection
-- **News APIs**: NewsAPI, GDELT, Alpha Vantage, Alpaca
-- **Web Scraping**: requests, BeautifulSoup4, Scrapy, playwright
-- **Scheduling**: cron, Apache Airflow, Prefect
-
-### Storage
-- **Relational DB**: PostgreSQL with pgvector extension
-- **Vector DB**: Qdrant (primary), Weaviate, or pgvector
-- **ORM**: SQLAlchemy
-
-### NLP/ML
-- **Frameworks**: Hugging Face transformers, spaCy
-- **Models**: 
-  - FinBERT (sentiment analysis)
-  - Named Entity Recognition models
-  - OpenAI/Anthropic LLMs for summarization
-- **Embeddings**: OpenAI embeddings API or sentence-transformers
-- **RAG**: LangChain or LlamaIndex
-
-### Backend/API
-- **Framework**: FastAPI
-- **Authentication**: Simple token-based or API key
-- **Async Processing**: httpx, asyncio
-
-### Frontend
-- **Dashboard**: Streamlit (rapid prototyping) or Plotly Dash
-- **Visualization**: Plotly, matplotlib
-
-### Deployment
-- **Containerization**: Docker, Docker Compose
-- **Cloud**: Render, Railway, AWS Lightsail (student-friendly)
-- **Monitoring**: Python logging, optional Prometheus + Grafana
+## Tech Stack (Condensed)
+**Data**: NewsAPI, GDELT, BeautifulSoup, Airflow/Prefect  
+**Storage**: PostgreSQL, Qdrant/pgvector  
+**NLP/ML**: FinBERT, spaCy, transformers, OpenAI/Anthropic LLMs, LangChain  
+**Backend**: FastAPI, SQLAlchemy  
+**Frontend**: Streamlit, Plotly  
+**Deploy**: Docker, Render/Railway
 
 ## Project Structure
-
 ```
 credit-risk-monitor/
-├── .claude/
-│   └── claude.md                 # This file
-├── data/
-│   ├── raw/                      # Raw API responses
-│   ├── processed/                # Cleaned data
-│   └── embeddings/               # Vector embeddings cache
+├── .claude/claude.md          # This file
 ├── src/
-│   ├── collectors/               # News collection modules
-│   │   ├── __init__.py
-│   │   ├── news_api.py
-│   │   ├── scraper.py
-│   │   └── scheduler.py
-│   ├── processors/               # Text processing
-│   │   ├── __init__.py
-│   │   ├── cleaner.py
-│   │   ├── ner_extractor.py
-│   │   └── preprocessor.py
-│   ├── models/                   # ML/NLP models
-│   │   ├── __init__.py
-│   │   ├── sentiment.py
-│   │   ├── classifier.py
-│   │   └── embeddings.py
-│   ├── rag/                      # RAG system
-│   │   ├── __init__.py
-│   │   ├── vector_store.py
-│   │   ├── retriever.py
-│   │   └── summarizer.py
-│   ├── alerts/                   # Alert generation
-│   │   ├── __init__.py
-│   │   ├── rules.py
-│   │   └── generator.py
-│   ├── api/                      # FastAPI backend
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   ├── routes/
-│   │   └── schemas/
-│   ├── db/                       # Database models
-│   │   ├── __init__.py
-│   │   ├── models.py
-│   │   └── connection.py
-│   └── utils/                    # Utilities
-│       ├── __init__.py
-│       ├── config.py
-│       └── logger.py
-├── dashboard/
-│   ├── app.py                    # Streamlit app
-│   ├── components/
-│   └── pages/
-├── notebooks/                    # Jupyter notebooks for exploration
-│   ├── 01_data_exploration.ipynb
-│   ├── 02_sentiment_analysis.ipynb
-│   ├── 03_rag_testing.ipynb
-│   └── 04_evaluation.ipynb
-├── infra/                        # Infrastructure
-│   ├── docker/
-│   │   ├── Dockerfile
-│   │   └── docker-compose.yml
-│   ├── airflow/                  # Airflow DAGs
-│   └── migrations/               # DB migrations
-├── tests/
-│   ├── unit/
-│   └── integration/
-├── docs/
-│   ├── architecture.md
-│   ├── api_docs.md
-│   └── setup.md
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
+│   ├── collectors/            # News collection
+│   ├── processors/            # Text cleaning, NER
+│   ├── models/                # Sentiment, classification, embeddings
+│   ├── rag/                   # Vector store, retrieval, summarization
+│   ├── alerts/                # Alert generation
+│   ├── api/                   # FastAPI backend
+│   └── db/                    # Database models
+├── dashboard/                 # Streamlit app
+├── data/                      # Raw/processed data
+├── notebooks/                 # Jupyter exploration
+├── tests/                     # Unit & integration tests
+├── scripts/                   # Seed data, collectors
+└── tasks/lessons.md          # Self-improvement tracking
 ```
 
-## Development Phases
-
-### Phase 1: Data Collection (Week 1-2)
-**Goal**: Build reliable news ingestion pipeline
-- Set up PostgreSQL database with initial schema
-- Implement NewsAPI/GDELT collectors
-- Create article storage with deduplication
-- Build simple scraper for supplemental sources
-- Test with 10-50 companies (portfolio universe)
-
-**Key Files**: `src/collectors/`, `src/db/models.py`
-
-### Phase 2: Text Processing (Week 3)
-**Goal**: Clean and enrich text data
-- Text cleaning pipeline (HTML removal, encoding fixes)
-- NER for company/ticker extraction
-- Entity mapping to obligor list
-- Language detection and filtering
-
-**Key Files**: `src/processors/`
-
-### Phase 3: Risk Signal Detection (Week 4)
-**Goal**: Classify and score articles
-- FinBERT sentiment analysis integration
-- Credit-relevance classifier (keywords + LLM)
-- Event type classification (downgrade, default, fraud, etc.)
-- Aggregation by obligor and time windows
-
-**Key Files**: `src/models/sentiment.py`, `src/models/classifier.py`
-
-### Phase 4: RAG System (Week 5)
-**Goal**: Build LLM-powered summarization
-- Set up vector database (Qdrant or pgvector)
-- Generate and store embeddings
-- Implement semantic search retrieval
-- Design prompts for credit-focused summaries
-- Output structured JSON with risk metadata
-
-**Key Files**: `src/rag/`, `src/models/embeddings.py`
-
-### Phase 5: Alert System (Week 6)
-**Goal**: Automated alert generation
-- Define alert rules (thresholds, patterns)
-- Scheduled job for alert checks
-- FastAPI endpoints for alert retrieval
-- Optional: Email/Slack notifications
-
-**Key Files**: `src/alerts/`, `src/api/main.py`
-
-### Phase 6: Dashboard (Week 7)
-**Goal**: Visual interface for risk monitoring
-- Portfolio overview with risk scores
-- Obligor drill-down pages
-- Time-series sentiment charts
-- Alert history and filtering
-- LLM summary display
-
-**Key Files**: `dashboard/app.py`, `dashboard/components/`
-
-### Phase 7: Polish & Deploy (Week 8)
-**Goal**: Production-ready deployment
-- Docker containerization
-- Documentation (README, architecture diagram)
-- Demo video/screenshots
-- Deployment to Render/Railway
-- Evaluation metrics documentation
-
-## Database Schema
-
-### Core Tables
-
+## Database Schema (Key Tables)
 ```sql
--- Raw articles
-CREATE TABLE articles (
-    id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL,
-    content TEXT NOT NULL,
-    url TEXT UNIQUE NOT NULL,
-    source VARCHAR(100),
-    published_at TIMESTAMP,
-    fetched_at TIMESTAMP DEFAULT NOW(),
-    language VARCHAR(10),
-    raw_json JSONB
-);
-
--- Processed articles
-CREATE TABLE processed_articles (
-    id SERIAL PRIMARY KEY,
-    article_id INTEGER REFERENCES articles(id),
-    cleaned_text TEXT,
-    entities JSONB,  -- [{type: "ORG", text: "XYZ Corp", ticker: "XYZ"}, ...]
-    sentiment_score FLOAT,
-    sentiment_label VARCHAR(20),
-    is_credit_relevant BOOLEAN,
-    event_types TEXT[],  -- ['downgrade', 'lawsuit', ...]
-    processed_at TIMESTAMP DEFAULT NOW()
-);
-
--- Obligors (companies being monitored)
-CREATE TABLE obligors (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    ticker VARCHAR(20),
-    lei VARCHAR(20),  -- Legal Entity Identifier
-    sector VARCHAR(100),
-    country VARCHAR(100),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Article-obligor mapping
-CREATE TABLE article_obligors (
-    article_id INTEGER REFERENCES processed_articles(id),
-    obligor_id INTEGER REFERENCES obligors(id),
-    mention_count INTEGER DEFAULT 1,
-    PRIMARY KEY (article_id, obligor_id)
-);
-
--- Daily aggregates
-CREATE TABLE obligor_daily_signals (
-    obligor_id INTEGER REFERENCES obligors(id),
-    date DATE,
-    article_count INTEGER,
-    negative_count INTEGER,
-    avg_sentiment FLOAT,
-    credit_relevant_count INTEGER,
-    event_types JSONB,
-    PRIMARY KEY (obligor_id, date)
-);
-
--- Alerts
-CREATE TABLE alerts (
-    id SERIAL PRIMARY KEY,
-    obligor_id INTEGER REFERENCES obligors(id),
-    timestamp TIMESTAMP DEFAULT NOW(),
-    severity VARCHAR(20),  -- 'low', 'medium', 'high', 'critical'
-    summary TEXT,
-    event_types TEXT[],
-    supporting_article_ids INTEGER[],
-    metadata JSONB,  -- LLM output, scores, etc.
-    acknowledged BOOLEAN DEFAULT FALSE
-);
-
--- Vector embeddings (if using pgvector)
-CREATE TABLE embeddings (
-    id SERIAL PRIMARY KEY,
-    article_id INTEGER REFERENCES processed_articles(id),
-    chunk_index INTEGER,
-    chunk_text TEXT,
-    embedding vector(1536),  -- OpenAI ada-002 dimension
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE INDEX ON embeddings USING ivfflat (embedding vector_cosine_ops);
+articles: id, title, content, url, source, published_at, fetched_at
+obligors: id, name, ticker, lei, sector, country
+processed_articles: id, article_id, cleaned_text, entities, sentiment_score, is_credit_relevant
+alerts: id, obligor_id, timestamp, severity, summary, event_types, metadata
+embeddings: id, article_id, chunk_text, embedding (vector)
 ```
+
+## Development Phases (8 Weeks)
+**Week 1-2**: Data collection (NewsAPI, database setup)  
+**Week 3**: Text processing (cleaning, NER, entity mapping)  
+**Week 4**: Sentiment analysis (FinBERT) + credit-relevance classification  
+**Week 5**: RAG system (embeddings, vector DB, LLM summarization)  
+**Week 6**: Alert system (rules, thresholds, FastAPI)  
+**Week 7**: Dashboard (Streamlit, visualizations)  
+**Week 8**: Deploy & document (Docker, README, demo)
 
 ## Environment Variables
-
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/credit_risk
-
-# News APIs
-NEWSAPI_KEY=your_key_here
-ALPHA_VANTAGE_KEY=your_key_here
-
-# LLM APIs
-OPENAI_API_KEY=your_key_here
-ANTHROPIC_API_KEY=your_key_here
-
-# Vector DB
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/credit_risk
+NEWSAPI_KEY=your_key
+OPENAI_API_KEY=your_key
 QDRANT_URL=http://localhost:6333
-QDRANT_API_KEY=optional_key
-
-# Application
-LOG_LEVEL=INFO
-ENVIRONMENT=development
 ```
-
-## Key Development Principles
-
-### 1. Start Simple, Iterate
-- Begin with manual scripts before orchestration
-- Use SQLite locally before PostgreSQL
-- Test with small data samples (100 articles)
-- Add complexity only when needed
-
-### 2. Modularity
-- Each component should be independently testable
-- Use dependency injection for flexibility
-- Create clear interfaces between modules
-
-### 3. Data Quality First
-- Log every stage of processing
-- Track data lineage
-- Monitor distribution shifts (sentiment, volume)
-- Build validation checks early
-
-### 4. LLM Best Practices
-- Design prompts with few-shot examples
-- Request structured output (JSON)
-- Set temperature low for classification (0.1-0.3)
-- Implement retry logic with exponential backoff
-- Cache LLM responses when possible
-- Monitor token usage and costs
-
-### 5. RAG Optimization
-- Chunk text intelligently (by paragraph, ~500 tokens)
-- Use hybrid search (semantic + keyword) when possible
-- Rerank retrieved chunks for relevance
-- Include metadata in embeddings (date, source, obligor)
-- Refresh embeddings periodically
-
-## Testing Strategy
-
-### Unit Tests
-- Data cleaning functions
-- Entity extraction accuracy
-- Classification model outputs
-- Alert rule logic
-
-### Integration Tests
-- End-to-end pipeline runs
-- API endpoint responses
-- Database operations
-- RAG retrieval quality
-
-### Evaluation Metrics
-- **Sentiment**: Compare FinBERT vs human labels on sample
-- **NER**: Precision/recall on company extraction
-- **Credit-Relevance**: F1 score on classification
-- **Alert Quality**: False positive rate, user feedback
-- **RAG**: Relevance of retrieved chunks, summary accuracy
-
-## Common Pitfalls & Solutions
-
-### Problem: Entity Matching
-**Issue**: News mentions "Apple" - is it Apple Inc. or a different company?
-**Solution**: 
-- Build fuzzy matching with thresholds
-- Use multiple identifiers (ticker, LEI, aliases)
-- Validate with external databases (OpenCorporates)
-- Manual curation for important obligors
-
-### Problem: LLM Hallucinations
-**Issue**: LLM invents non-existent events
-**Solution**:
-- Always ground with RAG (provide source text)
-- Request verbatim quotes in output
-- Validate against source articles programmatically
-- Lower temperature for factual tasks
-
-### Problem: Alert Fatigue
-**Issue**: Too many low-quality alerts
-**Solution**:
-- Tune thresholds based on backtesting
-- Add severity levels
-- Implement alert suppression (don't repeat same event)
-- Provide drill-down to sources
-
-### Problem: Slow Pipeline
-**Issue**: Processing thousands of articles takes too long
-**Solution**:
-- Batch processing with multiprocessing
-- Cache embeddings and model outputs
-- Use async I/O for API calls
-- Index database properly
-
-## Portfolio Presentation Tips
-
-### README Structure
-1. Problem statement (why this matters)
-2. Solution overview (high-level architecture)
-3. Key features (what it does)
-4. Tech stack (tools used)
-5. Demo (screenshots, GIF, or video link)
-6. Setup instructions (how to run locally)
-7. Sample output (example alerts with explanations)
-8. Architecture diagram
-9. Future improvements
-
-### What Recruiters Want to See
-- **Real-world relevance**: Connects to actual finance problems
-- **Technical depth**: Not just API calls - shows ML/NLP understanding
-- **System design**: Architecture decisions, tradeoffs
-- **Data engineering**: Pipelines, storage, processing at scale
-- **LLM proficiency**: RAG, prompt engineering, evaluation
-- **Polish**: Clean code, documentation, live demo
-
-### GitHub Organization
-- Clear directory structure
-- Comprehensive .gitignore
-- Requirements with versions
-- Docker setup for reproducibility
-- Jupyter notebooks showing exploratory analysis
-- Unit test coverage
-- CI/CD (optional but impressive)
-
-## Recommended Tools & Libraries
-
-```python
-# requirements.txt
-# Core
-python==3.11
-fastapi==0.104.1
-uvicorn==0.24.0
-pydantic==2.5.0
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-alembic==1.12.1
-
-# Data processing
-pandas==2.1.3
-numpy==1.26.2
-beautifulsoup4==4.12.2
-requests==2.31.0
-httpx==0.25.2
-scrapy==2.11.0
-playwright==1.40.0
-
-# NLP/ML
-transformers==4.36.0
-torch==2.1.1
-spacy==3.7.2
-sentence-transformers==2.2.2
-scikit-learn==1.3.2
-
-# LLM/RAG
-openai==1.3.7
-anthropic==0.7.7
-langchain==0.0.340
-langchain-community==0.0.3
-llama-index==0.9.15
-
-# Vector DB
-qdrant-client==1.7.0
-pgvector==0.2.3
-
-# Orchestration
-apache-airflow==2.7.3
-prefect==2.14.9
-
-# Dashboard
-streamlit==1.28.2
-plotly==5.18.0
-dash==2.14.2
-
-# Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-
-# Utilities
-python-dotenv==1.0.0
-pydantic-settings==2.1.0
-loguru==0.7.2
-```
-
-## Next Steps
-
-1. **Set up development environment**
-   - Install Python 3.11+
-   - Create virtual environment
-   - Install dependencies
-   - Configure PostgreSQL locally
-
-2. **Initialize project structure**
-   - Create directory tree
-   - Set up git repository
-   - Initialize database with schema
-   - Create .env from template
-
-3. **Start with Phase 1 (Data Collection)**
-   - Register for NewsAPI key
-   - Write first collector script
-   - Test with 5-10 companies
-   - Verify data storage
-
-4. **Iterate weekly through phases**
-   - Follow the 8-week timeline
-   - Commit frequently with clear messages
-   - Document learnings in notebooks
-   - Test each component before moving on
-
-## Questions to Consider
-
-- **Scale**: How many obligors will you monitor? (Start with 20-50)
-- **Update frequency**: Real-time, hourly, or daily? (Daily for MVP)
-- **LLM provider**: OpenAI (easy), Anthropic (longer context), or local (cost-effective)?
-- **Vector DB**: Cloud (Qdrant Cloud, Pinecone) or self-hosted?
-- **Deployment target**: Just demo or actually hosted?
 
 ---
 
-**Remember**: This is an ambitious project. Focus on getting a working end-to-end pipeline first, then iterate on quality. A simple but complete system is better than a complex but half-finished one.
+# 🚀 CRITICAL WORKFLOW PATTERNS (MUST FOLLOW)
 
-For any questions about implementation details, architecture decisions, or debugging, ask Claude Code in this project directory and this configuration will provide context.
+These patterns are REQUIRED for professional development. Follow them strictly.
+
+---
+
+## 1. Plan Mode Default ⚡ (REQUIRED)
+
+### When to Enter Plan Mode
+Enter plan mode for **ANY task with 3+ steps** or architectural decisions.
+
+**Examples that REQUIRE plan mode:**
+- "Implement sentiment analysis pipeline"
+- "Debug alert system not generating alerts"
+- "Refactor database queries for performance"
+- "Add new data source to collectors"
+
+**Examples that DON'T need plan mode:**
+- Fix typo in code
+- Update README
+- Change config value
+
+### Plan Mode Protocol
+
+```
+STEP 1: Break down into specific, measurable steps
+STEP 2: Identify blockers/edge cases upfront  
+STEP 3: Define success criteria for EACH step
+STEP 4: Execute step-by-step WITH verification
+STEP 5: If ANYTHING fails → STOP, re-assess, create NEW plan
+```
+
+### Example: Implementing FinBERT Sentiment Analysis
+
+**GOOD Plan:**
+```
+Plan: Implement FinBERT Sentiment Analysis
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Steps:
+1. Research FinBERT model on Hugging Face
+   → Find model ID: ProsusAI/finbert
+   → Verify: Check model card, confirm it's for financial text
+   
+2. Create src/models/sentiment.py
+   → Implement SentimentAnalyzer class
+   → Add __init__ to load model once
+   
+3. Write predict() method
+   → Input: article text (string)
+   → Output: {positive: float, negative: float, neutral: float}
+   → Handle: Articles >512 tokens (truncate or chunk)
+   
+4. Add batch processing for efficiency
+   → Process 50 articles at once
+   → Add progress tracking
+   
+5. Create unit test
+   → Test positive article: "Company reports record profits"
+   → Test negative article: "Company faces bankruptcy"
+   → Verify scores make sense
+   
+6. Test on 10 real articles from database
+   → Manually verify sentiment looks correct
+   → Check processing time (<10 seconds for 10 articles)
+   
+7. Integrate with database
+   → Update processed_articles table
+   → Verify schema matches
+
+Blockers:
+- Model download might take 15 min first time → Run ahead of time
+- May need GPU for speed → Test on CPU first, optimize if slow
+- Memory issues with large batches → Start with batch_size=10
+
+Success Criteria:
+✓ Can classify sentiment on test articles
+✓ Batch processing 100 articles < 1 minute  
+✓ >75% agreement with manual labels on 20-article test set
+✓ Results save to database correctly
+```
+
+**BAD Plan (Too Vague):**
+```
+Plan: Add sentiment analysis
+1. Install transformers
+2. Write code
+3. Test it
+4. Done
+```
+
+### If Something Goes Wrong
+
+**IMMEDIATELY STOP AND RE-PLAN:**
+```
+Original Plan: Fetch news for 100 companies
+Step 3: Running collector...
+ERROR: Rate limit exceeded after 50 companies
+
+❌ DON'T: Keep trying different things randomly
+✅ DO: STOP. Re-plan:
+  - Research: NewsAPI limit is 100 requests/day
+  - New plan: Split into 2 batches OR reduce lookback from 7 to 3 days
+  - Verify: Test new approach with 5 companies first
+```
+
+---
+
+## 2. Self-Improvement Loop 📚 (REQUIRED)
+
+**Purpose**: Never repeat the same mistake twice.
+
+### After ANY Correction from User
+
+**IMMEDIATELY update `tasks/lessons.md`:**
+
+```markdown
+## Lesson: [YYYY-MM-DD] - [Short Title]
+
+**What went wrong**: 
+[Specific error or issue - be brutally honest]
+
+**Root cause**: 
+[WHY it happened - dig deep, not just surface]
+
+**Prevention rule**: 
+[Concrete rule to follow in future - make it actionable]
+
+**Verification step**: 
+[How to verify this won't happen again]
+
+**Related files**: 
+[Which files/code this applies to]
+```
+
+### Real Example
+
+```markdown
+## Lesson: 2024-03-15 - Database Connection Failed
+
+**What went wrong**: 
+Script crashed with "sqlalchemy.exc.OperationalError: could not connect to server"
+
+**Root cause**: 
+I forgot to start Docker Desktop. Database container wasn't running.
+This happened because I opened a new terminal and jumped straight to coding.
+
+**Prevention rule**: 
+BEFORE running ANY script that uses database:
+1. Run: docker-compose ps
+2. If not "Up" → Run: docker-compose up -d
+3. Wait 5 seconds for database to initialize
+4. THEN run script
+
+**Verification step**: 
+Added try-catch to src/db/connection.py with helpful error:
+"Database connection failed. Did you start Docker? Run: docker-compose up -d"
+
+**Related files**: 
+All scripts using database: src/db/*, scripts/*
+```
+
+### Review Lessons at Session Start
+
+**Every work session:**
+```bash
+# 1. Navigate to project
+cd ~/projects/credit-risk-monitor
+
+# 2. Read lessons
+cat tasks/lessons.md | tail -50  # Last 50 lines
+
+# 3. Apply relevant lessons to today's task
+"Today: Implement NER"
+Check lessons: Any about imports? Testing? Database?
+```
+
+### Ruthlessly Iterate
+
+**Track your improvement:**
+```
+Week 1: 8 mistakes (baseline)
+Week 2: 5 mistakes (-37% ✓)
+Week 3: 3 mistakes (-62% ✓✓)
+Week 4: 1 mistake (-87% 🎉)
+
+Goal: <2 mistakes per week by Week 4
+```
+
+### Common Mistakes to Document
+
+**Environment:**
+- Forgot to activate venv
+- Docker not running
+- Wrong directory
+
+**Code:**
+- Missing imports (forgot pip install)
+- Hardcoded secrets (should use .env)
+- Didn't test on small sample first
+
+**Process:**
+- Skipped verification
+- Marked task "done" without testing
+- Didn't read error message fully
+
+---
+
+## 3. Verification Before "Done" ✅ (REQUIRED)
+
+**Never mark a task complete without PROVING it works.**
+
+### The Staff Engineer Standard
+
+Before saying "done", ask:
+
+**"Would a staff engineer at Google/Meta approve this in code review?"**
+
+If uncertain → NOT DONE YET.
+
+### Verification Checklist (ALL REQUIRED)
+
+```
+LEVEL 1: IT RUNS
+□ Code executes without errors
+□ No warnings in console
+□ Completes in reasonable time (<1 min for dev tasks)
+
+LEVEL 2: IT WORKS CORRECTLY  
+□ Produces expected output
+□ Handles edge cases (empty input, wrong type, None)
+□ Data in database looks correct (spot check 5-10 rows)
+□ Logs show expected behavior
+
+LEVEL 3: IT'S PRODUCTION-READY
+□ Has error handling (try-except with helpful messages)
+□ Has documentation (docstrings)
+□ Follows project conventions (naming, structure)
+□ Would be easy for someone else to understand
+□ Has tests (or manual test procedure documented)
+```
+
+### Evidence Required
+
+**For every completed task, provide:**
+
+1. **Command you ran**
+2. **Output received**  
+3. **Database verification** (if applicable)
+4. **Edge case tests**
+5. **Performance check**
+
+### Example: Proper Verification
+
+**Task**: Implement news collector
+
+**INSUFFICIENT:**
+```
+❌ "I wrote the collector. It should work."
+Status: NOT DONE
+```
+
+**PROPER:**
+```
+✅ VERIFICATION EVIDENCE:
+
+1. Code Execution:
+   Command: python src/collectors/news_api.py
+   Output: "Fetched 47 articles for Apple Inc."
+   Time: 12 seconds
+   Errors: None
+
+2. Database Verification:
+   Query: SELECT COUNT(*) FROM articles;
+   Result: 47 rows
+   
+   Query: SELECT title, url FROM articles LIMIT 3;
+   Sample:
+   - "Apple announces new iPhone" | https://...
+   - "Apple Q3 earnings beat..." | https://...
+   - "AAPL stock rises 3%" | https://...
+   
+   ✓ All have title, content, url populated
+   ✓ published_at timestamps look correct
+
+3. Edge Cases Tested:
+   ✓ Empty company name → ValueError with message "Company name required"
+   ✓ Invalid API key → Returns clear error "Check NEWSAPI_KEY in .env"
+   ✓ Network timeout → Retries 3 times, then fails gracefully
+   ✓ Duplicate articles → Deduplication works (re-run added 0 new rows)
+
+4. Performance:
+   ✓ 50 articles in 15 seconds = ~3 articles/second
+   ✓ Memory usage: 150MB (acceptable)
+
+5. Code Quality:
+   ✓ Has docstring explaining usage
+   ✓ Error messages are helpful
+   ✓ Follows project naming (snake_case)
+   ✓ Imports organized alphabetically
+
+Status: COMPLETE ✅
+```
+
+### Before/After Comparison
+
+**Always show measurable improvement:**
+
+```
+Task: Optimize database query
+
+BEFORE:
+- Query time: 5.2 seconds
+- Returned: 1,247 rows
+- Memory: 800MB
+
+AFTER:
+- Query time: 0.8 seconds (6.5x faster ✓)
+- Returned: 1,247 rows (same results ✓)  
+- Memory: 200MB (4x improvement ✓)
+
+Changes Made:
+- Added index on published_at column
+- Used SELECT only needed columns (not SELECT *)
+- Added LIMIT clause for pagination
+
+Verification:
+- Ran EXPLAIN ANALYZE → Confirms index is used
+- Spot-checked 20 rows → Results identical to before
+- Load tested with 10,000 articles → Consistent performance
+```
+
+### Test Coverage
+
+**Minimum tests required:**
+
+```python
+def test_sentiment_analyzer():
+    """Test sentiment analysis works correctly."""
+    analyzer = FinBERTSentiment()
+    
+    # Test positive sentiment
+    result = analyzer.predict("Company reports record profits")
+    assert result['positive'] > 0.7, "Should detect positive sentiment"
+    
+    # Test negative sentiment  
+    result = analyzer.predict("Company faces bankruptcy filing")
+    assert result['negative'] > 0.7, "Should detect negative sentiment"
+    
+    # Test edge case: empty string
+    with pytest.raises(ValueError):
+        analyzer.predict("")
+    
+    print("✅ All sentiment tests passed")
+```
+
+---
+
+## 4. Demand Elegance (Balanced) 💎 (REQUIRED)
+
+**For non-trivial changes, pause and ask: "Is there a more elegant way?"**
+
+### When to Refactor
+
+**Refactor if code is:**
+- Hard to understand (needs comments to explain basic logic)
+- Repetitive (same pattern copy-pasted 3+ times)
+- Fragile (small changes break it)
+- Nested deeply (>3 levels of indentation)
+- >100 lines in one function
+
+**Don't refactor if:**
+- It's a simple fix (<10 lines changed)
+- It's prototype/exploratory code
+- It's a one-time script
+- You're debugging urgent issue
+
+### The Two-Pass Approach
+
+**First Pass**: Get it working (quick & dirty is OK)  
+**Second Pass**: Make it elegant (if non-trivial)
+
+### Example: Text Cleaning
+
+**First Pass (Works but Messy):**
+```python
+def clean_text(text):
+    text = text.replace("<p>", "")
+    text = text.replace("</p>", "")
+    text = text.replace("<div>", "")
+    text = text.replace("</div>", "")
+    text = text.replace("<br>", "")
+    text = text.replace("<span>", "")
+    text = text.replace("</span>", "")
+    text = text.replace("&nbsp;", " ")
+    text = text.replace("&amp;", "&")
+    text = text.replace("&quot;", '"')
+    text = text.replace("&lt;", "<")
+    text = text.replace("&gt;", ">")
+    # ... 10 more lines
+    return text.strip()
+```
+
+**Pause: "Is there a better way?"**
+
+**Second Pass (Elegant):**
+```python
+from bs4 import BeautifulSoup
+import html
+
+def clean_text(html_text):
+    """Remove HTML tags and decode entities.
+    
+    Args:
+        html_text: Raw HTML string
+        
+    Returns:
+        Clean text with HTML removed and whitespace normalized
+    """
+    # Remove all HTML tags
+    soup = BeautifulSoup(html_text, 'html.parser')
+    text = soup.get_text()
+    
+    # Decode HTML entities (&nbsp; → space, etc.)
+    text = html.unescape(text)
+    
+    # Normalize whitespace
+    return ' '.join(text.split())
+```
+
+**Why better?**
+- Uses existing library (handles ALL tags, not just ones we listed)
+- 7 lines vs 20+ lines
+- More maintainable
+- Handles edge cases we didn't think of
+
+### Balance Rule
+
+**For this student project, prioritize:**
+
+1. **Working** (must have) - Does it run?
+2. **Readable** (must have) - Can you understand it next week?  
+3. **Elegant** (nice to have) - Is it the "best" way?
+
+**Don't over-engineer simple things:**
+```python
+# Simple task: Get current timestamp
+# ❌ Don't do this:
+import pytz
+from datetime import datetime
+now = datetime.now(pytz.timezone('UTC')).isoformat()
+
+# ✓ Do this:
+from datetime import datetime
+now = datetime.utcnow()
+```
+
+### "Knowing Everything I Know Now"
+
+**If a fix feels hacky, ask:**
+
+_"Knowing everything I know now about this problem, what's the elegant solution?"_
+
+Then implement that instead.
+
+---
+
+## 5. Autonomous Bug Fixing 🔧 (REQUIRED)
+
+**When given a bug report, just fix it. No hand-holding needed.**
+
+### How to Handle Bug Reports
+
+**User reports bug → You should:**
+
+1. **Diagnose immediately** (read error, check logs, find root cause)
+2. **Point at the issue** (file, line number, why it's happening)
+3. **Provide fix** (exact commands or code changes)
+4. **Verify it works** (test the fix)
+5. **Prevent recurrence** (add to tasks/lessons.md)
+
+### Example: Autonomous Fix
+
+**User Reports:**
+```
+"Getting ImportError when running sentiment analysis"
+```
+
+**BAD Response:**
+```
+❌ "Did you install transformers?"
+❌ "What does the error say?"
+❌ "Check if your venv is activated"
+```
+
+**GOOD Response:**
+```
+✅ I see the issue. Let me fix this:
+
+ROOT CAUSE:
+Line 3 in src/models/sentiment.py imports transformers:
+  from transformers import AutoTokenizer
+
+But transformers is not installed in your virtual environment.
+
+DIAGNOSIS:
+1. ✓ Checked requirements.txt → transformers NOT listed
+2. ✗ Checked venv packages → pip list shows no transformers  
+3. ✓ Confirmed venv is active → (venv) visible in prompt
+
+FIX:
+Run these commands:
+  pip install transformers torch
+  pip freeze > requirements.txt
+
+VERIFICATION:
+Test the import:
+  python -c "from transformers import AutoTokenizer; print('✅ Works')"
+
+PREVENTION:
+Added to tasks/lessons.md:
+- Prevention rule: After adding ANY new import, immediately run pip install
+- Updated requirements.txt with all dependencies
+
+Try running your script now. It should work.
+
+If you get another error, paste it and I'll fix it.
+```
+
+### Zero Context Switching
+
+**User should be able to:**
+1. Report bug: "X is broken"
+2. Go make coffee ☕
+3. Come back
+4. See it's fixed with explanation
+
+**You should NOT ask:**
+- "What error did you get?"
+- "What version are you using?"
+- "Did you try restarting?"
+
+**Instead, proactively:**
+- Check logs yourself
+- Identify the issue
+- Fix it
+- Verify it works
+
+### Types of Bugs to Fix Autonomously
+
+**Environment Issues:**
+```
+Error: "No module named X"
+→ Check if installed
+→ Check venv active
+→ Install if missing
+→ Update requirements.txt
+```
+
+**Database Issues:**
+```
+Error: "Could not connect"
+→ Check Docker running
+→ Check DATABASE_URL correct
+→ Provide fix commands
+→ Add healthcheck to code
+```
+
+**Logic Errors:**
+```
+Error: "List index out of range"
+→ Find the line
+→ Identify why (empty list? wrong index?)
+→ Fix with bounds check
+→ Add test for edge case
+```
+
+### Failing Tests/CI
+
+**User:** "pytest is failing"
+
+**You should:**
+```
+1. Run: pytest -v
+2. Read failure message
+3. Identify issue (wrong import, missing fixture, wrong assertion)
+4. Fix the code
+5. Verify: pytest passes
+6. Commit fix with message: "Fix: [what was wrong]"
+
+Don't wait for user to investigate - just fix it.
+```
+
+---
+
+## Implementation Guidelines
+
+### Task Execution Flow
+
+```
+User Request
+    ↓
+[3+ steps?] ──YES──→ Enter PLAN MODE
+    │                    ↓
+    NO              Create detailed plan
+    ↓                    ↓
+Simple task         Execute step-by-step
+    ↓                    ↓
+Execute             Verify each step
+    ↓                    ↓
+Verify          [Something wrong?] ──YES──→ STOP & Re-plan
+    ↓                    │
+Update lessons          NO
+    ↓                    ↓
+   DONE             All steps done
+                         ↓
+                    Final verification
+                         ↓
+                    Update lessons
+                         ↓
+                        DONE
+```
+
+### Code Quality Standards
+
+**Every code change must have:**
+
+1. **Purpose**: Why is this needed? (link to requirement)
+2. **Implementation**: What does it do? (docstring)
+3. **Testing**: How do we know it works? (tests or manual verification)
+4. **Documentation**: How do others use it? (examples)
+
+**Minimum documentation:**
+```python
+def collect_news(company_name: str, days: int = 7) -> List[Article]:
+    """
+    Collect recent news articles for a company.
+    
+    Args:
+        company_name: Company name to search for (e.g., "Apple Inc.")
+        days: Number of days to look back (default: 7)
+    
+    Returns:
+        List of Article objects with title, content, URL, published_at
+    
+    Raises:
+        APIError: If NewsAPI returns non-200 response
+        ValueError: If company_name is empty or None
+    
+    Example:
+        articles = collect_news("Apple Inc.", days=14)
+        print(f"Found {len(articles)} articles")
+    """
+    if not company_name:
+        raise ValueError("Company name cannot be empty")
+    # Implementation...
+```
+
+### Progress Tracking Format
+
+```markdown
+## [Date] Task: [Task Name]
+
+**Status**: In Progress / Complete / Blocked
+
+**What Was Done**:
+- ✅ Step 1: Created database models  
+- ✅ Step 2: Wrote connection logic
+- ⏳ Step 3: Testing with sample data (in progress)
+- ❌ Step 4: Blocked on API key
+
+**Verification**:
+[Evidence that it works - paste commands + output]
+
+**Next Steps**:
+1. Get NewsAPI key from .env
+2. Test collector with 5 companies
+3. Verify data in database
+
+**Blockers**:
+- Need to fix DATABASE_URL format in .env
+
+**Lessons Learned**:
+- Always check .env file exists before running
+- Use .env.example as template
+```
+
+---
+
+## Quick Reference
+
+### Before Starting ANY Task
+- [ ] Is this 3+ steps? → Enter plan mode
+- [ ] Virtual environment activated?
+- [ ] Database running? (docker-compose ps)
+- [ ] Read relevant lessons from tasks/lessons.md?
+
+### During Task
+- [ ] Testing on small sample first? (10 items, not 10,000)
+- [ ] Verifying each step works before moving on?
+- [ ] Stopping and re-planning if stuck?
+
+### After Completing Task  
+- [ ] Proved it works? (ran commands, have output)
+- [ ] Handles edge cases?
+- [ ] Added documentation?
+- [ ] Updated tasks/lessons.md if learned something?
+- [ ] Committed with clear message?
+
+### If You Made a Mistake
+1. Fix it
+2. Document in tasks/lessons.md (root cause + prevention)
+3. Create verification step to prevent recurrence
+
+---
+
+## Project-Specific Notes
+
+### LLM Best Practices
+- Keep temperature low for classification (0.1-0.3)
+- Request structured output (JSON) with schema
+- Add few-shot examples in prompts
+- Implement retry logic with exponential backoff
+- Cache responses when possible
+- Monitor token usage and costs
+
+### RAG Optimization  
+- Chunk text at 500-800 tokens for finance domain
+- Use hybrid search (semantic + keyword) when possible
+- Include metadata in embeddings (date, source, obligor)
+- Rerank retrieved chunks before sending to LLM
+- Refresh embeddings periodically
+
+### Common Pitfalls to Avoid
+- Testing on full dataset without trying small sample first
+- Not checking API rate limits before bulk operations
+- Forgetting to activate venv before running scripts
+- Hardcoding secrets instead of using .env
+- Marking task "done" without verification
+- Not reading error messages completely
+
+---
+
+**Remember**: Focus on getting a working end-to-end pipeline first, then iterate on quality. A simple but complete system is better than a complex but half-finished one.
+
+For questions about implementation, architecture, or debugging, ask Claude Code - this configuration provides full context.
