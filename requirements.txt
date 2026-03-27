@@ -1,0 +1,17 @@
+# Week 1 base dependencies — minimal set for data collection, DB setup, and API scaffolding.
+# Additional packages (NLP, RAG, dashboard) will be added in later phases.
+
+fastapi==0.104.1
+uvicorn==0.24.0
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+pandas==2.1.3
+requests==2.31.0
+beautifulsoup4==4.12.2
+pytest==7.4.3
+pytest-cov==4.1.0
+loguru==0.7.2
