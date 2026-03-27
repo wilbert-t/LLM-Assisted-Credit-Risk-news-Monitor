@@ -156,11 +156,14 @@ claude-code "Create .env.template file with:
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/credit_risk
 
 # News APIs
-NEWSAPI_KEY=your_newsapi_key_here
+NEWSAPI_KEY=
 GDELT_API=http://gdelt.io
 
-# LLM
-ANTHROPIC_API_KEY=your_claude_api_key_here
+# LLM - Currently using Groq (Llama 3.3)
+GROQ_API_KEY=
+
+# LLM - Anthropic Claude (for future use, comment out for now)
+# ANTHROPIC_API_KEY=your_claude_api_key_here
 
 # Application Settings
 LOG_LEVEL=INFO
@@ -168,6 +171,10 @@ ENVIRONMENT=development
 DEBUG=true
 BATCH_SIZE=50
 MAX_WORKERS=4
+
+# LLM Model Selection
+LLM_PROVIDER=groq
+LLM_MODEL=llama-3.3-70b-versatile
 
 Add comments explaining each section.
 Show the file when done."
@@ -296,6 +303,7 @@ Show the file when done."
 ```bash
 # This is the big test — does it connect to database?
 python src/db/connection.py
+python -m src.db.connection
 
 # Should output: "Database connected: PostgreSQL 15.x..."
 # If error about connection, database might not be running

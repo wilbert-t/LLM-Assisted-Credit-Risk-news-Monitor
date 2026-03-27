@@ -66,30 +66,37 @@ Example:
 
 ## 📅 WEEK 1 STANDUPS
 
-### Week 1, Day 1: [DATE]
+### Week 1, Day 1: [28 march 2026]
 
 ✅ COMPLETED:
 - Project structure: ✅ All directories created
-- venv + deps: ✅ All base packages installed
-- Docker: ✅ PostgreSQL running
-- Git: ✅ Initial commit
+- venv + dependencies: ✅ Installed
+- Docker PostgreSQL: ✅ Running
+- Database models: ✅ 6 models defined
+- Database connection: ✅ Tested and working
+- Utilities: ✅ config, logger, constants
+- Obligor seeding script: ✅ Ready (will run tomorrow)
+- Git: ✅ Initial commit done
 
-🚧 IN PROGRESS TODAY:
-- SQLAlchemy models: Finish Article + Obligor models by EOD
-- Alembic migration: Run first migration
+🚧 IN PROGRESS:
+- Alembic migration: Created, will apply tomorrow
 
 🚨 BLOCKERS:
 - None
 
 📊 METRICS:
-- Articles in DB: 0
-- Tests passing: 0/0
+- Files created: 15+
+- Lines of code: 1200+
 - Commits: 1
-- Code lines: 500
+- Tests written: 0 (starting tomorrow)
 
 🎯 NEXT 24H:
-- Complete database models + migration
-- Tomorrow: Run seed script with 50 obligors
+- Apply Alembic migration
+- Seed 50 obligors
+- Create NewsAPI collector module
+```
+
+And update `session-log.md`:
 
 ---
 
