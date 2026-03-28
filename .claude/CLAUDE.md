@@ -1,17 +1,17 @@
 # Credit Risk Monitoring System
 
 ## Session Start — do this first
-1. Read `tasks/session-log.md` → know where we left off
-2. Read last 20 lines of `tasks/lessons.md` → avoid repeat mistakes
+1. Read `.claude/session-log.md` → know where we left off
+2. Read last 20 lines of `.claude/lessons.md` → avoid repeat mistakes
 3. Run `docker-compose ps` → confirm DB + Qdrant are up
 4. Confirm venv is active: `source venv/bin/activate`
 
 ## Session End — do this before stopping
-Update `tasks/session-log.md`:
+Update `.claude/session-log.md`:
 - What was completed this session
 - Current blockers or open questions
 - Exact next step to resume (be specific — file, function, line if relevant)
-- Any new lesson (also log in `tasks/lessons.md`)
+- Any new lesson (also log in `.claude/lessons.md`)
 Keep only the last 3 sessions in the log.
 
 ---
@@ -42,10 +42,10 @@ scores credit risk, and surfaces alerts automatically.
 7. Deploy — Docker Compose, hosted demo, README
 
 ## Reference
-Static details live in `tasks/reference/` — load only when relevant:
-- `tasks/reference/schema.md` — full DB schema + env vars
-- `tasks/reference/rag.md` — RAG config, LLM prompt pattern, model settings
-- `tasks/reference/rules.md` — alert rules, API rate limits, keywords
+Static details live in `.claude/reference/` — load only when relevant:
+- `.claude/reference/schema.md` — full DB schema + env vars
+- `.claude/reference/rag.md` — RAG config, LLM prompt pattern, model settings
+- `.claude/reference/rules.md` — alert rules, API rate limits, keywords
 
 ---
 
@@ -63,7 +63,7 @@ Static details live in `tasks/reference/` — load only when relevant:
 
 ### Bug Fixing
 - Read full error, find root cause (file + line)
-- Fix, verify, log in `tasks/lessons.md`
+- Fix, verify, log in `.claude/lessons.md`
 - Don't ask for info you can find in logs or code
 
 ### Elegance
