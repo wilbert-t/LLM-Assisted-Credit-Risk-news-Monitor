@@ -2,7 +2,7 @@
 Test data factories — produce valid model dicts and instances for tests.
 """
 
-from src.db.models import Article, Obligor
+from src.db.models import Article, Obligor, ProcessedArticle
 
 
 def article_dict(**overrides) -> dict:
@@ -42,3 +42,18 @@ def obligor_model(**overrides) -> Obligor:
     }
     fields.update(overrides)
     return Obligor(**fields)
+
+
+def processed_article_model(article_id: int, **overrides) -> ProcessedArticle:
+    """Return an unsaved ProcessedArticle ORM instance linked to an article."""
+    fields = {
+        "article_id": article_id,
+        "cleaned_text": "Apple reported record quarterly revenue of $120bn.",
+        "entities": {"ORG": ["Apple Inc."], "MONEY": ["$120bn"]},
+        "sentiment_score": -0.42,
+        "sentiment_label": "negative",
+        "is_credit_relevant": True,
+        "event_types": ["earnings", "revenue"],
+    }
+    fields.update(overrides)
+    return ProcessedArticle(**fields)

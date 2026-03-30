@@ -2,7 +2,10 @@
 Unit tests for src/utils/config.py.
 """
 
-from src.utils.config import settings
+import pytest
+from pydantic import ValidationError
+
+from src.utils.config import settings, Settings
 
 
 def test_database_url_set():
@@ -33,3 +36,9 @@ def test_log_level_valid():
     """LOG_LEVEL must be a recognised logging level string."""
     valid = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
     assert settings.LOG_LEVEL.upper() in valid
+
+
+def test_missing_required_key_raises():
+    """Settings raises ValidationError when a typed field gets an invalid value."""
+    with pytest.raises(ValidationError):
+        Settings(BATCH_SIZE="not-a-number", _env_file=None)

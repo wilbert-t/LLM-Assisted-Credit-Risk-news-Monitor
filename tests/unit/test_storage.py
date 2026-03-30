@@ -124,3 +124,10 @@ def test_get_article_count(db):
     with patch("src.collectors.storage.SessionLocal", return_value=db):
         count = get_article_count()
     assert count == 2
+
+
+def test_store_invalid_data_raises(db):
+    """Passing None instead of a dict raises an AttributeError in _map_article."""
+    with patch("src.collectors.storage.SessionLocal", return_value=db):
+        with pytest.raises(AttributeError):
+            store_articles([None])
