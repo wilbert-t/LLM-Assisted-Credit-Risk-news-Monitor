@@ -3,6 +3,28 @@
 
 ---
 
+## Session 4 — 2026-03-30
+
+### Completed
+- Fixed Docker port conflict: changed port mapping from 5432 → 5433 in `docker-compose.yml` and `.env`
+- Fixed `datetime.utcnow()` deprecation warnings (Python 3.12) in:
+  - `src/collectors/news_api.py` — replaced with `datetime.now(timezone.utc)`
+  - `scripts/collect_news_all.py` — replaced with `datetime.now(timezone.utc)`
+- Re-seeded obligors (50 in DB)
+- Re-ran full batch collector: **2,258 articles collected successfully from all 50 obligors**
+- ✅ No deprecation warnings, all data verified in DB
+
+### Blockers / Open Questions
+- None
+
+### Next Step
+- Phase 2: Text processing — `src/processors/cleaner.py`
+  - Strip HTML tags from `content` field
+  - Normalize whitespace
+  - Filter articles under minimum length threshold
+
+---
+
 ## Session 3 — 2026-03-29
 
 ### Completed

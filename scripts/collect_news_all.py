@@ -10,7 +10,7 @@ Usage:
 
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.collectors.news_api import NewsAPICollector, NewsAPIError, RateLimitError
 from src.collectors.storage import get_article_count, store_articles
@@ -53,8 +53,8 @@ def collect_news() -> None:
         return
 
     total = len(obligors)
-    from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
-    to_date = datetime.utcnow().strftime("%Y-%m-%d")
+    from_date = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
+    to_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     logger.info(f"Starting collection for {total} obligors ({from_date} → {to_date})")
 

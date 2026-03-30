@@ -12,7 +12,7 @@ Usage:
 """
 
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import requests
@@ -106,9 +106,9 @@ class NewsAPICollector:
             NewsAPIError:   API returned an error status.
         """
         if from_date is None:
-            from_date = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+            from_date = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d")
         if to_date is None:
-            to_date = datetime.utcnow().strftime("%Y-%m-%d")
+            to_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         params = {
             "q":        query,
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     print("\n--- Fetching news for 'Apple Inc.' (last 7 days) ---\n")
     articles = collector.fetch_news(
         query="Apple Inc.",
-        from_date=(datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d"),
+        from_date=(datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d"),
         page_size=10,
     )
 
