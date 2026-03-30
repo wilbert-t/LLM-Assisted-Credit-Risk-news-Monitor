@@ -3,10 +3,7 @@ SQLAlchemy ORM models for the Credit Risk Monitor.
 All models include created_at / updated_at auto-timestamps.
 """
 
-from datetime import datetime
-
 from sqlalchemy import (
-    BigInteger,
     Boolean,
     Column,
     Date,
