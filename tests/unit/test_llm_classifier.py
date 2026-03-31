@@ -70,3 +70,4 @@ class TestClassifyWithLLM:
 
         assert result["is_credit_relevant"] is False
         assert result["event_types"] == []
+        assert result["error"] is not None
