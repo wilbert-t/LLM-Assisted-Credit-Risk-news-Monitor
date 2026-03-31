@@ -238,13 +238,15 @@ Cowork Action:
 ```
 
 #### 📝 Verify
-- [ ] 50 obligors in database
-- [ ] Config module loads .env correctly
-- [ ] Logger working (check logs in console)
-- [ ] Utility modules importable
-- [ ] Commit: `git add . && git commit -m "Seed: 50 obligors + utility modules"`
+- [x] 50 obligors in database
+- [x] Config module loads .env correctly
+- [x] Logger working (check logs in console)
+- [x] Utility modules importable
+- [x] Commit: `git add . && git commit -m "Seed: 50 obligors + utility modules"`
 
 ---
+
+# last checkpoint 29 march
 
 ### DAY 4: News Collection (NewsAPI) (4 hours)
 
@@ -328,6 +330,7 @@ Cowork Action:
 - [ ] Commit: `git add . && git commit -m "Feature: NewsAPI collector + storage"`
 
 ---
+# checkpoiny day 30 march
 
 ### DAY 5: Testing Framework & First Tests (3 hours)
 
@@ -458,6 +461,7 @@ Cowork Action:
 
 ---
 
+
 ### DAY 7: Daily Standup Ritual + Week 1 Wrap (1 hour)
 
 #### 🎬 Daily Standup Template (15 min)
@@ -509,6 +513,8 @@ Format (run daily at fixed time):
 - [ ] All code committed to GitHub
 
 ---
+
+
 
 ## ⚡ WEEK 2: TEXT PROCESSING & NER (Days 8-14)
 
@@ -684,65 +690,6 @@ Cowork Action:
 5. Verify: psql -c "SELECT COUNT(*) FROM processed_articles;"
 ```
 
-### DAY 13: Aggregate Signals & Visualization
-
-#### 💬 Claude Code Task: Create Signal Aggregation
-```bash
-# File: src/processors/signal_aggregator.py
-
-# Function: aggregate_daily_signals(obligor_id: int, date: datetime) -> Dict
-#   - Count articles published that day
-#   - Count credit-relevant articles
-#   - Calculate average sentiment (placeholder for now)
-#   - Store in obligor_daily_signals table
-
-# Function: aggregate_all_daily() -> None
-#   - For each obligor + date with articles
-#   - Calculate daily signals
-#   - Upsert into obligor_daily_signals
-
-# Tests:
-#   - test_aggregate_single_day
-#   - test_aggregate_multiple_days
-```
-
-#### 💬 Claude Code Task: Create Jupyter Notebook for EDA
-```bash
-# File: notebooks/week2_eda.ipynb
-
-# Cell 1: Load data
-#   - Query all processed articles
-#   - Load into pandas DataFrame
-
-# Cell 2: Stats
-#   - Total articles: X
-#   - Date range: [start] to [end]
-#   - Average sentiment: Y (placeholder)
-
-# Cell 3: Obligor Coverage
-#   - How many articles per obligor?
-#   - Which obligors have no articles?
-
-# Cell 4: Entity Extraction Quality
-#   - How many articles mapped to obligors?
-#   - Coverage percentage
-
-# Cell 5: Timeline Chart
-#   - Articles over time (bar chart)
-```
-
-### DAY 14: Week 2 Wrap + Standup
-
-#### 📝 Week 2 Completion Checklist
-- [ ] All articles cleaned (HTML removed, normalized)
-- [ ] NER extraction working (entities identified)
-- [ ] Entity mapping working (companies linked to obligors)
-- [ ] Language filtering working (English only)
-- [ ] Daily signals calculated
-- [ ] Integration tests passing (>80% pipeline success rate)
-- [ ] EDA notebook showing data quality
-- [ ] All standup reports documented
-
 ---
 
 ## ⚡ WEEK 3: SENTIMENT ANALYSIS & RISK CLASSIFICATION (Days 15-21)
@@ -813,6 +760,7 @@ Cowork Action:
 #### 💬 Claude Code Task: Integrate into Pipeline
 ```bash
 # Update: src/processors/pipeline.py
+
 #   - Call is_credit_relevant()
 #   - Call classify_events()
 #   - Store in processed_articles table

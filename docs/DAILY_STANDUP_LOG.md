@@ -316,3 +316,148 @@ And update `session-log.md`:
 ---
 
 **Start with Week 1, Day 1 tomorrow! 🚀**
+
+---
+
+## 📅 WEEK 2 STANDUPS
+
+### Week 2, Day 8: 2026-03-30
+
+✅ COMPLETED:
+- Text cleaning pipeline: ✅ `cleaner.py` (HTML stripping, NFKC normalization, boilerplate removal incl. `[+N chars]`)
+- Processing pipeline: ✅ `pipeline.py` with LEFT JOIN filter, bulk upsert, error skip
+- Unit tests: ✅ 24 tests passing (`test_cleaner.py`)
+
+🚧 IN PROGRESS:
+- NER extraction
+
+📊 METRICS:
+- Tests passing: 46/46
+- Commits: 1
+
+🎯 NEXT 24H:
+- Add spaCy NER extraction
+
+---
+
+### Week 2, Day 9: 2026-03-30
+
+✅ COMPLETED:
+- NER extractor: ✅ `ner_extractor.py` with lazy-loaded `en_core_web_sm`, returns `{"ORG": [{text,start,end}]}`
+- Pipeline updated: ✅ real `extract_entities()` call
+- Unit tests: ✅ 18 tests passing (`test_ner_extractor.py`)
+- Full suite: 66 tests
+
+🚨 BLOCKERS (resolved):
+- spaCy + pydantic 2.5.0 + Python 3.12 crash (`ForwardRef._evaluate` signature change)
+  → Fixed: upgraded pydantic to 2.10.6 + pydantic-settings 2.7.0
+
+📊 METRICS:
+- Tests passing: 66/66
+- Commits: 1
+- Real entities in DB (e.g. Apple, Microsoft)
+
+🎯 NEXT 24H:
+- Entity-to-obligor fuzzy matching
+
+---
+
+### Week 2, Day 10: 2026-03-30
+
+✅ COMPLETED:
+- Entity mapper: ✅ `entity_mapper.py` — 3-pass (ticker → name → rapidfuzz ≥80%)
+- `map_articles_to_obligors()`: bulk upsert with in-memory dedup
+- Unit tests: ✅ 16 tests (`test_entity_mapper.py`)
+
+📊 METRICS:
+- Tests passing: 82/82
+- Commits: 1
+
+🎯 NEXT 24H:
+- Language filtering + integration tests
+
+---
+
+### Week 2, Day 11: 2026-03-30
+
+✅ COMPLETED:
+- Language filter: ✅ `language_filter.py` — DB field shortcut + langdetect fallback
+- Pipeline language guard: ✅ `skipped_language` counter
+- Unit tests: ✅ 13 tests (`test_language_filter.py`)
+
+📊 METRICS:
+- Tests passing: 95/95
+- Commits: 1
+
+🎯 NEXT 24H:
+- Integration tests
+
+---
+
+### Week 2, Day 12: 2026-03-30
+
+✅ COMPLETED:
+- Integration tests: ✅ 10 tests (`test_processing_pipeline.py`)
+- Scripts: ✅ `process_all_articles.py`, `map_entities.py`
+- Smoke test on real data: 1,189/2,253 processed, 88 article-obligor links
+
+📊 METRICS:
+- Tests passing: 105/105
+- Articles processed: 1,194
+- Article-obligor links: 88
+- Processing coverage: 53% (47% skipped — NewsAPI truncation)
+- Commits: 1
+
+🎯 NEXT 24H:
+- Signal aggregation + EDA notebook
+
+---
+
+### Week 2, Day 13: 2026-03-30
+
+✅ COMPLETED:
+- Signal aggregator: ✅ `signal_aggregator.py` — `aggregate_daily_signals()` + `aggregate_all_daily()`, ON CONFLICT DO UPDATE
+- Script: ✅ `scripts/aggregate_signals.py`
+- EDA notebook: ✅ `notebooks/week2_eda.ipynb` (5 cells)
+- Unit tests: ✅ 9 tests (`test_signal_aggregator.py`)
+- Full suite: 114 tests
+
+📊 METRICS:
+- Tests passing: 114/114
+- Obligor-date pairs in `obligor_daily_signals`: 52
+- Top obligor: Apple Inc. — 4 articles on 2026-03-27
+- avg_sentiment: NULL (FinBERT Phase 3)
+- Commits: 1
+
+🎯 NEXT 24H (Week 3):
+- Phase 3: FinBERT sentiment scoring
+
+---
+
+## WEEK 2 SUMMARY (Days 8–13)
+
+### ✅ COMPLETED
+- HTML cleaning, text normalization
+- spaCy NER extraction
+- Entity-to-obligor fuzzy mapping (rapidfuzz)
+- Language detection + filtering
+- Integration test suite (10 tests)
+- Daily signal aggregation (52 rows)
+- EDA notebook
+
+### 🔢 METRICS
+- Articles processed: 1,194
+- Article-obligor links: 88
+- Obligor-date signal rows: 52
+- Tests: 114/114 passing
+- Processing coverage: 53%
+
+### 🚨 BLOCKERS ENCOUNTERED
+- spaCy + pydantic 2.5.0 + Python 3.12 `ForwardRef._evaluate` crash → fixed by pydantic 2.10.6
+- NewsAPI content truncation (47% of articles too short) → accepted, GDELT in Phase 4
+
+### 🎯 WEEK 3 GOALS
+- Phase 3: FinBERT sentiment scoring (`ProsusAI/finbert`)
+- Phase 3: Credit relevance classifier
+- Populate `sentiment_label`, `sentiment_score`, `is_credit_relevant`
+- Rerun `aggregate_all_daily()` with real sentiment values

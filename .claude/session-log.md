@@ -1,80 +1,106 @@
 # Session Log
-# Keep only last 3 sessions.
+# Keep only last 5 sessions.
 
 ---
 
-## Session 4 — 2026-03-30
+## Session 7 — 2026-03-30
 
 ### Completed
-- Fixed Docker port conflict: changed port mapping from 5432 → 5433 in `docker-compose.yml` and `.env`
-- Fixed `datetime.utcnow()` deprecation warnings (Python 3.12) in:
-  - `src/collectors/news_api.py` — replaced with `datetime.now(timezone.utc)`
-  - `scripts/collect_news_all.py` — replaced with `datetime.now(timezone.utc)`
-- Re-seeded obligors (50 in DB)
-- Re-ran full batch collector: **2,258 articles collected successfully from all 50 obligors**
-- ✅ No deprecation warnings, all data verified in DB
+- **Day 13a: Signal Aggregator**
+  - `src/processors/signal_aggregator.py` — `aggregate_daily_signals(obligor_id, date, db=None)` + `aggregate_all_daily(db=None)`
+  - ON CONFLICT DO UPDATE on `uq_obligor_daily_signals_obligor_date`
+  - `neg_article_count` = total article count (placeholder until FinBERT)
+  - `avg_sentiment` = NULL until sentiment_score populated
+  - `scripts/aggregate_signals.py` — standalone runner
+  - `tests/unit/test_signal_aggregator.py` — 9 tests, all passing
+- **Day 13b: EDA Notebook**
+  - `notebooks/week2_eda.ipynb` — 5 cells (load data, stats, obligor coverage, entity quality, timeline chart)
+- **Day 14: Week 2 wrap**
+  - `docs/DAILY_STANDUP_LOG.md` — Week 2 standups appended (Days 8–13 + summary)
+- **Dependencies**: `jupyter==1.0.0`, `matplotlib==3.8.2` added to `requirements.txt`
+- **Full suite: 114 tests, all passing**
+- **Smoke test on real data:**
+  - 52 (obligor, date) pairs upserted into `obligor_daily_signals`
+  - Top: Apple Inc. 4 articles on 2026-03-27; Walt Disney 4 on 2026-03-26
 
 ### Blockers / Open Questions
 - None
 
 ### Next Step
-- Phase 2: Text processing — `src/processors/cleaner.py`
-  - Strip HTML tags from `content` field
-  - Normalize whitespace
-  - Filter articles under minimum length threshold
+- Phase 3: FinBERT sentiment scoring (Day 15 per STARTUP_PLAN)
+  - `pip install transformers torch` (CPU)
+  - `src/processors/sentiment.py` — `score_sentiment(text) -> (label, score)`
+    - Model: `ProsusAI/finbert`, labels: positive/negative/neutral, score: -1.0 to 1.0
+  - Update `pipeline.py`: populate `sentiment_label` + `sentiment_score` per article
+  - Rerun `aggregate_all_daily()` with real sentiment values
+
+### Also discussed
+- Week 8 backtesting: user considering OpenBB integration in `src/models/ground_truth.py`
+  - OpenBB `obb.equity.price.historical()` via yfinance provider (no API key)
+  - Rolling 30-day max → flag crash if drop > 20%, deduplicate to worst day per month
+  - Pending: explore existing file before planning
 
 ---
 
-## Session 3 — 2026-03-29
+## Session 6 — 2026-03-30
 
 ### Completed
-- `src/collectors/news_api.py` — `NewsAPICollector` class with `fetch_news()`, `fetch_all_pages()`, retry/backoff, rate limit handling, 30s timeout
-- `src/collectors/storage.py` — `store_articles()` with ON CONFLICT DO NOTHING deduplication, batch inserts, `get_article_count()`
-- `scripts/collect_news_all.py` — batch collector looping all 50 obligors, 1s delay between requests, graceful rate limit stop
-- **End-to-end test run completed** (9/50 obligors, stopped manually per cowork instructions):
-  - 540 articles inserted into DB
-  - Duplicates handled correctly (e.g. MSFT: 11 dupes silently skipped)
-  - 1s delay between requests confirmed in logs
-  - `finally` block printed summary even after Ctrl+C
-- Cowork checklist status:
-  - ✅ 100+ articles inserted (540)
-  - ✅ Deduplication working
-  - ✅ Rate limit delays working
-  - ✅ API key guard working
-  - ⚠️ `datetime.utcnow()` deprecation warning — fix next session
+- **Day 10: Entity Mapper**
+  - `src/processors/entity_mapper.py` — `match_entity_to_obligor()` (exact ticker → exact name → rapidfuzz token_set_ratio ≥80%) + `map_articles_to_obligors()` (bulk upsert, in-memory dedup)
+  - `scripts/map_entities.py` — standalone runner
+  - `tests/unit/test_entity_mapper.py` — 16 tests passing
+- **Day 11: Language Filter**
+  - `src/processors/language_filter.py` — `detect_language()` + `filter_english_articles()`
+  - `pipeline.py` updated — language guard (checks `article.language` first, fallback langdetect), new `skipped_language` counter
+  - `tests/unit/test_language_filter.py` — 13 tests passing
+- **Day 12: Integration Tests + Scripts**
+  - `tests/integration/test_processing_pipeline.py` — 10 tests (single article, batch of 20, robustness, e2e with entity mapping)
+  - `scripts/process_all_articles.py` — full pipeline runner
+  - `tests/factories.py` — updated entity format to dict (text/start/end)
+  - `requirements.txt` — added rapidfuzz 3.9.3, langdetect 1.0.9
+- **Full suite: 105 tests, all passing**
+- **Smoke test on real data:**
+  - 1,189 of 2,253 articles processed (1,064 skipped — too short after cleaning)
+  - 88 article-obligor links created in `article_obligors`
+  - 1,194 total rows in `processed_articles`
 
 ### Blockers / Open Questions
-- `datetime.utcnow()` deprecated in Python 3.12 — replace with `datetime.now(UTC)` in `collect_news_all.py` and `news_api.py`
-- Only 9/50 obligors collected — run full 50 when ready (costs 50 API requests)
+- None
 
 ### Next Step
-- Fix `datetime.utcnow()` deprecation warning in `scripts/collect_news_all.py` and `src/collectors/news_api.py`
-- Then Phase 2: text processing — `src/processors/cleaner.py`
-  - Strip HTML tags from `content` field
-  - Normalize whitespace
-  - Filter articles under minimum length threshold
+- Phase 3: FinBERT sentiment scoring (Day 13 per STARTUP_PLAN)
+  - Install `transformers` + `torch` (CPU)
+  - Create `src/processors/sentiment.py` — `score_sentiment(text) -> (label, score)`
+    - Model: `ProsusAI/finbert`, labels: positive/negative/neutral, score: -1.0 to 1.0
+  - Update `pipeline.py`: populate `sentiment_label` + `sentiment_score` per article
+  - Update `obligor_daily_signals` aggregation after sentiment
 
 ---
 
-## Session 2 — 2026-03-29
+## Session 5 — 2026-03-30
 
 ### Completed
-- Confirmed all Day 1 work intact: seed_obligors (50 in DB), config, logger, constants
-- Moved session-log.md and lessons.md from `tasks/` → `.claude/`, removed `tasks/` dir
-- Updated all `tasks/` path references in CLAUDE.md to `.claude/`
-- Built `src/collectors/news_api.py` and `src/collectors/storage.py`
-- Built `scripts/collect_news_all.py`
+- **Day 8: Text cleaning pipeline**
+  - `src/processors/cleaner.py` — `clean_html()`, `normalize_text()`, `clean_article()`
+  - `src/processors/pipeline.py` — `process_articles_batch()` with LEFT JOIN filter, bulk upsert, error skip
+  - `tests/unit/test_cleaner.py` — 24 tests, all passing
+- **Day 9: NER Extractor**
+  - `src/processors/ner_extractor.py` — `extract_entities()` + `extract_companies_from_article()`
+    - Lazy-loads `en_core_web_sm` once; returns `{"ORG": [{"text", "start", "end"}], ...}`
+  - `src/processors/pipeline.py` — replaced placeholder with real `extract_entities()` call
+  - `tests/unit/test_ner_extractor.py` — 18 tests, all passing
+  - `requirements.txt` — spaCy 3.8.4, en-core-web-sm 3.8.0, pydantic 2.10.6, pydantic-settings 2.7.0
+  - Full suite: **66 tests, all passing**
+  - Smoke test: real entities in DB e.g. `{"ORG": [{"text": "Apple", "start": 50, "end": 55}], "DATE": [...]}`
+
+### Blockers / Open Questions
+- None
 
 ### Next Step
-- ~~Run collector~~ → completed in Session 3
+- Day 10: FinBERT sentiment scoring
+  - Create `src/processors/sentiment.py` — `score_sentiment(text) -> (label, score)`
+    - Model: `ProsusAI/finbert` from HuggingFace
+    - Returns label ("positive"/"negative"/"neutral") + float score (-1.0 to 1.0)
+  - Update `pipeline.py`: call `score_sentiment()`, populate `sentiment_label` + `sentiment_score`
+  - Add `tests/unit/test_sentiment.py`
 
----
-
-## Session 1 — 2026-03-28
-
-### Completed
-- Full project structure, DB models, utilities, seed script
-- Git history rewritten to scrub exposed API keys, force-pushed to GitHub
-
-### Next Step
-- ~~NewsAPI collector~~ → completed in Sessions 2–3

@@ -122,7 +122,7 @@ class ProcessedArticle(TimestampMixin, Base):
         unique=True,
     )
     cleaned_text = Column(Text, nullable=True)
-    entities = Column(JSON, nullable=True)              # {type: [name, ...], ...}
+    entities = Column(JSON, nullable=True)              # {type: [{text, start, end}, ...], ...}
     sentiment_score = Column(Float, nullable=True)      # -1.0 to 1.0
     sentiment_label = Column(String(20), nullable=True) # positive / negative / neutral
     is_credit_relevant = Column(Boolean, default=False, nullable=False)

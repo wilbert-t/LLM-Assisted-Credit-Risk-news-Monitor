@@ -49,7 +49,7 @@ def processed_article_model(article_id: int, **overrides) -> ProcessedArticle:
     fields = {
         "article_id": article_id,
         "cleaned_text": "Apple reported record quarterly revenue of $120bn.",
-        "entities": {"ORG": ["Apple Inc."], "MONEY": ["$120bn"]},
+        "entities": {"ORG": [{"text": "Apple Inc.", "start": 0, "end": 10}], "MONEY": [{"text": "$120bn", "start": 20, "end": 26}]},
         "sentiment_score": -0.42,
         "sentiment_label": "negative",
         "is_credit_relevant": True,

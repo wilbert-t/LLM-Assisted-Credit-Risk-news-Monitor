@@ -64,19 +64,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 4. Set up environment variables
-cp .env.template .env
-# Edit .env — add your NEWSAPI_KEY at minimum
+cp .env.example .env   # or create .env manually
+# Edit .env — add your NEWSAPI_KEY and DATABASE_URL at minimum
 
 # 5. Start the database
 docker-compose up -d
 ```
 
-Then initialise and collect data:
+Then initialise and run the pipeline:
 
 ```bash
 python -m src.db.connection          # create tables
 python -m scripts.seed_obligors      # seed 50 obligors
-python -m scripts.collect_news_all   # collect articles (uses ~50 API requests)
+python -m scripts.collect_news_all   # collect articles (~50 API requests)
+python -m scripts.process_all_articles  # clean, NER, entity mapping
+python -m scripts.aggregate_signals  # compute daily obligor signals
 ```
 
 ---
@@ -87,17 +89,18 @@ python -m scripts.collect_news_all   # collect articles (uses ~50 API requests)
 .
 ├── src/
 │   ├── collectors/       # News ingestion (NewsAPI, storage)
-│   ├── processors/       # Text cleaning, NER, sentiment (Phase 2+)
+│   ├── processors/       # Text cleaning, NER, entity mapping, signal aggregation
 │   ├── rag/              # Embeddings, vector search, summariser (Phase 4+)
 │   ├── alerts/           # Alert rules and scheduler (Phase 5+)
 │   ├── api/              # FastAPI endpoints (Phase 5+)
 │   ├── db/               # SQLAlchemy models and connection
 │   └── utils/            # Config, logger, constants
+├── notebooks/            # EDA notebooks
 ├── dashboard/            # Streamlit app (Phase 6+)
-├── scripts/              # One-off CLI scripts
+├── scripts/              # CLI scripts (collect, process, aggregate)
 ├── tests/
 │   ├── unit/             # Unit tests (pytest)
-│   └── integration/      # Integration tests (Phase 5+)
+│   └── integration/      # Integration tests
 ├── .github/workflows/    # CI/CD (GitHub Actions)
 ├── docker-compose.yml    # PostgreSQL service
 └── requirements.txt
@@ -136,15 +139,18 @@ python -m scripts.collect_news_all
 - [x] Unit test suite — 24 tests, all passing
 - [x] CI/CD pipeline (GitHub Actions)
 
-**Week 2 — Text Processing**
-- [ ] HTML cleaning, whitespace normalisation
-- [ ] Language detection
-- [ ] spaCy NER — extract company/person entities
+**Week 2 — Text Processing** ✅
+- [x] HTML cleaning, text normalisation
+- [x] Language detection (English-only filter)
+- [x] spaCy NER — extract company/person/org entities
+- [x] Entity-to-obligor mapping (exact + fuzzy matching)
+- [x] Daily signal aggregation — 52 obligor-date rows
+- [x] Integration tests + EDA notebook
+- [x] 114 tests, all passing — 1,194 articles processed, 88 obligor links
 
 **Week 3 — Risk Signals**
 - [ ] FinBERT sentiment scoring
 - [ ] Credit-relevance classifier
-- [ ] Obligor–article linking
 
 **Week 4 — RAG**
 - [ ] Chunk + embed articles (sentence-transformers)
