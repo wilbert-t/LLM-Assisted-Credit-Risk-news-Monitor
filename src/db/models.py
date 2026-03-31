@@ -233,6 +233,7 @@ class ObligorDailySignals(TimestampMixin, Base):
     neg_article_count = Column(Integer, default=0, nullable=False)
     avg_sentiment = Column(Float, nullable=True)
     credit_relevant_count = Column(Integer, default=0, nullable=False)
+    risk_score = Column(Float, nullable=True)   # avg of score_article_risk() per day
 
     __table_args__ = (
         UniqueConstraint("obligor_id", "date", name="uq_obligor_daily_signals_obligor_date"),
