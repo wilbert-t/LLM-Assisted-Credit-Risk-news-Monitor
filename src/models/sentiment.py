@@ -74,10 +74,10 @@ class FinBERTSentiment:
         with torch.no_grad():
             outputs = self._model(**inputs)
 
-        probs = F.softmax(outputs.logits, dim=-1).squeeze().tolist()
+        label = _LABEL_ORDER[outputs.logits.argmax(dim=-1).item()]
+        probs = F.softmax(outputs.logits, dim=-1).squeeze(0).tolist()
         # probs order: [positive, negative, neutral]
         pos, neg, neu = probs[0], probs[1], probs[2]
-        label = _LABEL_ORDER[probs.index(max(probs))]
 
         return {
             "label":    label,
