@@ -12,7 +12,7 @@ Update `.claude/session-log.md`:
 - Current blockers or open questions
 - Exact next step to resume (be specific — file, function, line if relevant)
 - Any new lesson (also log in `.claude/lessons.md`)
-Keep only the last 5 sessions in the log.
+Keep only the last 10 sessions in the log.
 
 ---
 
