@@ -12,8 +12,6 @@ Usage:
 
 import argparse
 
-from sqlalchemy.orm import Session
-
 from src.db.connection import SessionLocal
 from src.db.models import ProcessedArticle
 from src.models.sentiment import FinBERTSentiment
