@@ -17,7 +17,7 @@ YESTERDAY = datetime.date(2026, 3, 27)
 _url_counter = 0
 
 
-def _setup_link(db, obligor, date, sentiment_score=None, is_credit_relevant=False):
+def _setup_link(db, obligor, date, sentiment_score=None, is_credit_relevant=False, **kwargs):
     """Create article + processed_article + article_obligor link for given date."""
     global _url_counter
     _url_counter += 1
@@ -34,6 +34,7 @@ def _setup_link(db, obligor, date, sentiment_score=None, is_credit_relevant=Fals
         article_id=article.id,
         sentiment_score=sentiment_score,
         is_credit_relevant=is_credit_relevant,
+        **kwargs,
     )
     db.add(pa)
     db.flush()
@@ -56,8 +57,8 @@ class TestAggregateDailySignals:
         db.add(o)
         db.flush()
 
-        _setup_link(db, o, TODAY)
-        _setup_link(db, o, TODAY)
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)
 
         result = aggregate_daily_signals(o.id, TODAY, db=db)
 
@@ -68,8 +69,8 @@ class TestAggregateDailySignals:
         db.add(o)
         db.flush()
 
-        _setup_link(db, o, TODAY)
-        _setup_link(db, o, YESTERDAY)
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)
+        _setup_link(db, o, YESTERDAY, sentiment_score=-0.5)
 
         result_today = aggregate_daily_signals(o.id, TODAY, db=db)
         result_yesterday = aggregate_daily_signals(o.id, YESTERDAY, db=db)
@@ -117,11 +118,11 @@ class TestAggregateDailySignals:
         db.add(o)
         db.flush()
 
-        _setup_link(db, o, TODAY)
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)
         result1 = aggregate_daily_signals(o.id, TODAY, db=db)
         assert result1["neg_article_count"] == 1
 
-        _setup_link(db, o, TODAY)
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)
         result2 = aggregate_daily_signals(o.id, TODAY, db=db)
         assert result2["neg_article_count"] == 2
 
@@ -139,6 +140,36 @@ class TestAggregateDailySignals:
         assert result["neg_article_count"] == 0
         assert result["avg_sentiment"] is None
         assert result["credit_relevant_count"] == 0
+
+    def test_neg_count_excludes_neutral_and_positive(self, db):
+        """neg_article_count only counts articles with sentiment_score < -0.1."""
+        o = obligor_model(name="NeutralCo", ticker="NEU2")
+        db.add(o)
+        db.flush()
+
+        _setup_link(db, o, TODAY, sentiment_score=-0.5)   # counts
+        _setup_link(db, o, TODAY, sentiment_score=0.2)    # positive — does NOT count
+        _setup_link(db, o, TODAY, sentiment_score=None)   # no score — does NOT count
+
+        result = aggregate_daily_signals(o.id, TODAY, db=db)
+
+        assert result["neg_article_count"] == 1
+
+    def test_risk_score_computed(self, db):
+        """risk_score is the average of score_article_risk() per article."""
+        o = obligor_model(name="RiskCo", ticker="RSK2")
+        db.add(o)
+        db.flush()
+
+        # Article 1: credit_relevant=True, sentiment=-0.5, no events → 0.5 + 0.3 = 0.8
+        _setup_link(db, o, TODAY, sentiment_score=-0.5, is_credit_relevant=True, event_types=[])
+        # Article 2: credit_relevant=False, sentiment=0.5, no events → 0.0
+        _setup_link(db, o, TODAY, sentiment_score=0.5, is_credit_relevant=False, event_types=[])
+
+        result = aggregate_daily_signals(o.id, TODAY, db=db)
+
+        # avg of [0.8, 0.0] = 0.4
+        assert result["risk_score"] == pytest.approx(0.4, abs=1e-6)
 
 
 # ---------------------------------------------------------------------------
