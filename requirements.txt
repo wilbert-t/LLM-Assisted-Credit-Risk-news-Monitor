@@ -1,5 +1,6 @@
 # Week 1 base dependencies — minimal set for data collection, DB setup, and API scaffolding.
-# Additional packages (NLP, RAG, dashboard) will be added in later phases.
+# Week 2 NLP: spaCy NER added for Phase 3.
+# Additional packages (RAG, dashboard) will be added in later phases.
 
 fastapi==0.104.1
 uvicorn==0.24.0
@@ -7,8 +8,8 @@ sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 alembic==1.12.1
 python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic==2.10.6
+pydantic-settings==2.7.0
 pandas==2.1.3
 requests==2.31.0
 beautifulsoup4==4.12.2
@@ -16,3 +17,11 @@ pytest==7.4.3
 pytest-cov==4.1.0
 loguru==0.7.2
 ruff==0.3.0
+spacy==3.8.4
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+rapidfuzz==3.9.3
+langdetect==1.0.9
+jupyter==1.0.0
+matplotlib==3.8.2
+transformers==4.40.0
+torch==2.3.0
