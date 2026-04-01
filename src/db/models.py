@@ -272,7 +272,15 @@ class Embedding(TimestampMixin, Base):
     chunk_index = Column(Integer, nullable=False)
 
     __table_args__ = (
+        UniqueConstraint("article_id", "chunk_index", name="uq_embeddings_article_chunk"),
         Index("ix_embeddings_article_id", "article_id"),
+        Index(
+            "ix_embeddings_ivfflat",
+            "embedding",
+            postgresql_using="ivfflat",
+            postgresql_with={"lists": 100},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
     )
 
     # Relationships

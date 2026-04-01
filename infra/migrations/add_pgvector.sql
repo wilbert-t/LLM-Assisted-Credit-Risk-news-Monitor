@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS embeddings (
 
 CREATE INDEX IF NOT EXISTS ix_embeddings_article_id ON embeddings (article_id);
 
+ALTER TABLE embeddings ADD CONSTRAINT IF NOT EXISTS uq_embeddings_article_chunk UNIQUE (article_id, chunk_index);
+
 -- IVFFlat index for approximate cosine similarity search.
 -- Only effective with 1000+ rows. Safe to create with fewer rows but won't speed things up.
 CREATE INDEX IF NOT EXISTS ix_embeddings_ivfflat
