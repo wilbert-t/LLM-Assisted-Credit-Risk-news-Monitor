@@ -30,3 +30,6 @@ logs/
 
 # Notebooks checkpoints
 .ipynb_checkpoints/
+
+# Git worktrees
+.worktrees/
