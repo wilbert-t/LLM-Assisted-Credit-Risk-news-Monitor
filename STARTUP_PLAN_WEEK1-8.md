@@ -1027,6 +1027,8 @@ Cowork Action:
 
 ## ⚡ WEEK 5: LLM SUMMARIZATION & ALERTS (Days 29-35)
 
+> See also: `docs/UPGRADE_PLAN.md` — Part 2, Upgrade 2 for baseline comparison file list, function signatures, and comparison output format.
+
 ### 🎯 Week 5 Goal
 **RAG-enhanced summaries + Alert rule engine + Alert generation system working**
 
@@ -1222,6 +1224,8 @@ Cowork Action:
 ---
 
 ## ⚡ WEEK 6: BACKEND API (Days 36-42)
+
+> See also: `docs/UPGRADE_PLAN.md` — Part 2, Upgrade 3 for explainability layer full alert response structure, score decomposition fields, and evidence schema. **Requires Week 4 RAG to be complete first.**
 
 ### 🎯 Week 6 Goal
 **Complete FastAPI backend with all endpoints + Authentication + Error handling**
@@ -1431,6 +1435,10 @@ class AlertResponse(BaseModel):
 ---
 
 ## ⚡ WEEK 7: DASHBOARD (Days 43-49)
+
+> See also: `docs/UPGRADE_PLAN.md` — Part 1 (full page layouts, Plotly chart specs, caching strategy, code patterns) and Part 2, Upgrade 4 (complete file list, new packages).
+
+> **SAFE INDICATOR (new):** In `dashboard/pages/portfolio.py`, companies with avg `risk_score` < 0.3 AND `credit_relevant_count` == 0 for last 7 days show a green "✓ SAFE" badge in the heatmap Status column. In `dashboard/pages/company_detail.py`, show a green banner: "No Credit Risk Events Detected (7d)". Helper: `compute_safe_status(signals)` in `dashboard/components/kpi_cards.py`. Data source: existing `obligor_daily_signals` columns — no schema change needed.
 
 ### 🎯 Week 7 Goal
 **Interactive Streamlit dashboard + Charts + Drill-downs + Deployment ready**
@@ -1664,6 +1672,9 @@ class AlertResponse(BaseModel):
 ---
 
 ## ⚡ WEEK 8: DOCUMENTATION, DEPLOYMENT & FINALIZATION (Days 50-56)
+
+> See also: `docs/UPGRADE_PLAN.md` — Part 2, Upgrade 1 (backtesting: ground truth CSV, BacktestEngine class, scikit-learn metrics). **Important: write actual measured precision/recall into README only after backtester runs — targets in UPGRADE_PLAN.md are aspirational.**
+> Bonus: `docs/UPGRADE_PLAN.md` — Part 2, Upgrade 5 (LLM ablation: Llama-3.3 vs Qwen-72b vs DeepSeek-V3). Implement only after Weeks 4–7 are complete.
 
 ### 🎯 Week 8 Goal
 **Production-ready deployment + Comprehensive documentation + Portfolio polish**

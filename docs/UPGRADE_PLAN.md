@@ -35,15 +35,21 @@ LAYOUT:
 |   Alerts   |  Companies   |  Processed (7d)   |  Risk Score   |
 +------------+--------------+-------------------+---------------+
 |                    RISK HEATMAP                                |
-|  Company    | Low | Medium | High | Critical | 7d Score       |
-|  Apple Inc  |  v  |        |      |          | 0.21 ||||      |
-|  JPMorgan   |     |   v    |      |          | 0.54 ||||||||  |
-|  Tesla      |     |        |  v   |          | 0.71 ||||||||  |
-|  Evergrande |     |        |      |    v     | 0.91 ||||||||| |
+|  Company    | Status | Low | Med | High | Crit | 7d Score      |
+|  Apple Inc  | ✓ SAFE |  v  |     |      |      | 0.21 |||      |
+|  JPMorgan   | ✓ SAFE |  v  |     |      |      | 0.29 ||||     |
+|  Tesla      |        |     |  v  |      |      | 0.54 ||||||||  |
+|  Evergrande |        |     |     |  v   |      | 0.91 ||||||||| |
 +----------------------------------------------------------------+
 |           7-DAY RISK TREND (Plotly line chart)                 |
 |  Alert count and avg portfolio risk score over time            |
 +----------------------------------------------------------------+
+
+SAFE INDICATOR:
+- "✓ SAFE" badge = avg risk_score < 0.3 AND credit_relevant_count == 0 over last 7 days
+- Threshold 0.3 = sentiment-only noise floor (negative news, no credit events)
+- 4th KPI card shows "N Safe Companies" in green alongside "N At Risk"
+- Company drill-down shows green banner: "No Credit Risk Events Detected (7d)"
 
 #### Page 2: Real-Time Alert Stream
 A live feed of alerts, newest first, color-coded by severity.
@@ -122,13 +128,13 @@ FOLDER STRUCTURE:
   dashboard/
   |-- app.py                    <- Main Streamlit app with sidebar nav
   |-- pages/
-  |   |-- portfolio.py          <- Page 1: Portfolio overview + heatmap
+  |   |-- portfolio.py          <- Page 1: Portfolio overview + heatmap + SAFE badge
   |   |-- alert_stream.py       <- Page 2: Live alert feed
   |   |-- company_detail.py     <- Page 3: Drill-down per obligor
   |   |-- sector_heatmap.py     <- Page 4: Sector cross-section
   |   +-- realtime_monitor.py   <- Page 5: KPIs + live charts (Differentiator)
   +-- components/
-      |-- kpi_cards.py          <- Reusable KPI card components
+      |-- kpi_cards.py          <- Reusable KPI card components + compute_safe_status()
       |-- risk_heatmap.py       <- Plotly heatmap component
       |-- alert_card.py         <- Alert card with severity badge
       |-- sentiment_chart.py    <- Sentiment trend line chart
@@ -179,6 +185,30 @@ CACHING STRATEGY:
             <div style="background:{color};width:{score*100:.0f}%;height:8px;border-radius:4px"></div>
           </div>
       ''', unsafe_allow_html=True)
+
+# Safe status helper (dashboard/components/kpi_cards.py):
+  def compute_safe_status(signals: list[dict]) -> dict:
+      """
+      signals: list of daily signal rows with keys risk_score, credit_relevant_count
+      Returns: {"is_safe": bool, "avg_risk": float, "article_count": int}
+      Safe = avg risk_score < 0.3 AND total credit_relevant_count == 0 over 7 days.
+      """
+      if not signals:
+          return {"is_safe": False, "avg_risk": 0.0, "article_count": 0}
+      scores = [s["risk_score"] for s in signals if s.get("risk_score") is not None]
+      crc = sum(s.get("credit_relevant_count", 0) for s in signals)
+      avg = sum(scores) / len(scores) if scores else 0.0
+      return {
+          "is_safe": avg < 0.3 and crc == 0,
+          "avg_risk": avg,
+          "article_count": sum(s.get("neg_article_count", 0) for s in signals),
+      }
+
+# Safe banner in company drill-down (dashboard/pages/company_detail.py):
+  if safe_status["is_safe"]:
+      st.success("✓ No Credit Risk Events Detected in the last 7 days")
+      st.caption(f"Based on {safe_status['article_count']} articles · "
+                 f"Avg risk score: {safe_status['avg_risk']:.2f}")
 
 ---
 
