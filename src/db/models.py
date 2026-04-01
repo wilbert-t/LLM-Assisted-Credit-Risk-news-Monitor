@@ -3,6 +3,7 @@ SQLAlchemy ORM models for the Credit Risk Monitor.
 All models include created_at / updated_at auto-timestamps.
 """
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     Column,
@@ -71,6 +72,7 @@ class Article(TimestampMixin, Base):
     # Relationships
     processed = relationship("ProcessedArticle", back_populates="article", uselist=False)
     obligor_links = relationship("ArticleObligor", back_populates="article")
+    embeddings = relationship("Embedding", back_populates="article")
 
     def __repr__(self) -> str:
         return f"<Article id={self.id} source={self.source!r} published_at={self.published_at}>"
@@ -248,4 +250,36 @@ class ObligorDailySignals(TimestampMixin, Base):
         return (
             f"<ObligorDailySignals id={self.id} obligor_id={self.obligor_id} "
             f"date={self.date} avg_sentiment={self.avg_sentiment}>"
+        )
+
+
+class Embedding(TimestampMixin, Base):
+    """
+    Vector embedding for a chunk of a processed article.
+    Multiple rows per article — one per chunk.
+    """
+
+    __tablename__ = "embeddings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    article_id = Column(
+        Integer,
+        ForeignKey("articles.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    chunk_text = Column(Text, nullable=False)
+    embedding = Column(Vector(384), nullable=False)
+    chunk_index = Column(Integer, nullable=False)
+
+    __table_args__ = (
+        Index("ix_embeddings_article_id", "article_id"),
+    )
+
+    # Relationships
+    article = relationship("Article", back_populates="embeddings")
+
+    def __repr__(self) -> str:
+        return (
+            f"<Embedding id={self.id} article_id={self.article_id} "
+            f"chunk_index={self.chunk_index}>"
         )

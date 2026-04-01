@@ -13,7 +13,7 @@ Isolation strategy:
 import os
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 from src.db.models import Base
@@ -28,6 +28,9 @@ TEST_DATABASE_URL = os.getenv(
 def engine():
     """Create the test engine and tables once for the entire test session."""
     _engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
+    with _engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
     Base.metadata.create_all(bind=_engine)
     yield _engine
     Base.metadata.drop_all(bind=_engine)

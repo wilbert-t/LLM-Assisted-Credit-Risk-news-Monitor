@@ -83,6 +83,9 @@ def init_db() -> None:
     Safe to call multiple times (CREATE TABLE IF NOT EXISTS semantics).
     """
     try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+            conn.commit()
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created (or already exist).")
     except SQLAlchemyError as e:
