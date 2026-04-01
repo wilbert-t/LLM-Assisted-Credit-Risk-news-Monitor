@@ -59,6 +59,16 @@ def embed_and_store_articles(
             .all()
         )
 
+        already_embedded = {
+            row.article_id
+            for row in db.query(Embedding.article_id).filter(
+                Embedding.article_id.in_(article_ids)
+            ).distinct().all()
+        }
+        if already_embedded:
+            logger.debug(f"Skipping {len(already_embedded)} already-embedded articles.")
+        rows = [r for r in rows if r.article_id not in already_embedded]
+
         for row in rows:
             text = row.cleaned_text
             if not text:

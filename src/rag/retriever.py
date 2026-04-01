@@ -137,7 +137,8 @@ class ArticleRetriever:
     ) -> List[Dict]:
         db, own_session = self._get_db()
         try:
-            cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+            db.execute(text("SET LOCAL ivfflat.probes = 10"))
+            cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
 
             rows = (
                 db.query(Embedding.chunk_text, Embedding.article_id, Article.published_at)
