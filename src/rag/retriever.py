@@ -25,6 +25,8 @@ from __future__ import annotations
 import datetime
 from typing import Dict, List, Optional
 
+from sqlalchemy import text
+
 from src.db.models import Article, ArticleObligor, Embedding
 from src.models.embeddings import EmbeddingGenerator
 from src.utils.logger import setup_logger
@@ -73,10 +75,18 @@ class ArticleRetriever:
         db, own_session = self._get_db()
 
         try:
+            # IVFFlat index requires probes >= lists to return all results when
+            # the dataset is small.  Setting probes=10 ensures correct recall
+            # for datasets up to ~10 000 rows without hurting query speed.
+            db.execute(text("SET LOCAL ivfflat.probes = 10"))
+
+            distance_col = Embedding.embedding.cosine_distance(query_vector).label(
+                "distance"
+            )
             q = db.query(
                 Embedding.chunk_text,
                 Embedding.article_id,
-                Embedding.embedding.cosine_distance(query_vector).label("distance"),
+                distance_col,
             )
 
             if obligor_id is not None:
@@ -84,7 +94,7 @@ class ArticleRetriever:
                     ArticleObligor, ArticleObligor.article_id == Article.id
                 ).filter(ArticleObligor.obligor_id == obligor_id)
 
-            rows = q.order_by("distance").limit(top_k).all()
+            rows = q.order_by(distance_col).limit(top_k).all()
 
             return [
                 {

@@ -10,7 +10,7 @@ Usage:
 import argparse
 
 from src.db.connection import SessionLocal
-from src.db.models import ProcessedArticle
+from src.db.models import Embedding, ProcessedArticle
 from src.models.embedding_pipeline import embed_and_store_articles
 from src.utils.logger import setup_logger
 
@@ -20,8 +20,13 @@ logger = setup_logger(__name__)
 def main(limit: int | None = None) -> None:
     db = SessionLocal()
     try:
+        already_embedded = {
+            row.article_id
+            for row in db.query(Embedding.article_id).distinct().all()
+        }
         query = db.query(ProcessedArticle.article_id).filter(
-            ProcessedArticle.cleaned_text.isnot(None)
+            ProcessedArticle.cleaned_text.isnot(None),
+            ProcessedArticle.article_id.notin_(already_embedded),
         )
         if limit:
             query = query.limit(limit)
