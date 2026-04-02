@@ -139,3 +139,44 @@ HIGH_SIGNAL_SOURCES: list[str] = [
     "CNBC",
     "MarketWatch",
 ]
+
+# ============================================================================
+# LLM Configuration — Groq
+# ============================================================================
+
+GROQ_PRIMARY_MODEL = "llama-3.3-70b-versatile"
+GROQ_FALLBACK_MODEL = "llama-3.1-8b-instant"
+GROQ_TIMEOUT_SECONDS = 30
+GROQ_RETRY_SLEEP_BASE = 20  # seconds, multiplied by attempt number
+
+# Cache TTL by obligor tier (minutes)
+SUMMARY_CACHE_TTL_HIGH_RISK = 230  # 4 hours - 10 min buffer
+SUMMARY_CACHE_TTL_NORMAL = 350     # 6 hours - 10 min buffer
+
+# ============================================================================
+# Alert Rule Names
+# ============================================================================
+
+ALERT_RULE_CREDIT_EVENT = "Rule1_CreditEvent"
+ALERT_RULE_COVENANT_LIQUIDITY = "Rule2_CovenantLiquidity"
+ALERT_RULE_DOWNGRADE_WATCH = "Rule3_DowngradeWatch"
+ALERT_RULE_SENTIMENT_SPIKE = "Rule4_SentimentSpike"
+ALERT_RULE_MULTIPLE_EVENTS = "Rule5_MultipleEvents"
+
+# Rule thresholds
+SENTIMENT_SPIKE_THRESHOLD = -0.5
+SENTIMENT_SPIKE_MIN_ARTICLES = 3
+MULTIPLE_EVENTS_THRESHOLD = 2
+MULTIPLE_EVENTS_WINDOW_HOURS = 48
+
+# Alert Scheduler
+INTER_CALL_SLEEP_SECONDS = 15
+HIGH_RISK_CYCLE_HOURS = 4
+NORMAL_CYCLE_HOURS = 6
+
+# Priority tier thresholds
+HIGH_RISK_MIN_ALERTS_7D = 2
+HIGH_RISK_MAX_SENTIMENT = -0.4
+
+# Deduplication
+ALERT_DEDUP_WINDOW_HOURS = 24
