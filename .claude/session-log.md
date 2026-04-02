@@ -3,6 +3,92 @@
 
 ---
 
+## Session 12 — 2026-04-02 (Week 5 Complete)
+
+### Completed
+- **Phase 5: LLM Summarization & Alerts** — full system merged to `main`, 246 tests passing (from 189)
+  
+  **Database:**
+  - `infra/migrations/add_summaries_table.sql` — cache table (obligor_id, cache_date, article_hash) for LLM summaries
+  - `src/db/models.py` — `Summaries` ORM model with TimestampMixin, unique constraint, indices
+  
+  **Summarizer (Groq API):**
+  - `src/rag/summarizer.py` — `ObligorSummarizer` class with `summarize_obligor_risk(obligor_id, days=7)`
+  - `has_new_articles_since()` — checks for new articles since last summary for cache invalidation
+  - `call_groq_with_backoff()` — Groq API caller with intelligent retry (primary model, fallback on 429, exponential backoff)
+  - Cache strategy: keyed by (obligor_id, cache_date, article_hash), TTL 230-350min per tier, invalidates on new articles
+  - Response: `{company, summary, key_events, risk_level, concerns, positive_factors, confidence, model_used, cached}`
+  - **9 unit tests** covering caching, fallback, Groq retries, empty results
+  
+  **Alert Rules Engine:**
+  - `src/alerts/rules.py` — `AlertEngine` with 5 rule implementations
+    1. Rule 1 (CRITICAL): Credit Event — fires on default/bankruptcy/fraud
+    2. Rule 2 (HIGH): Covenant/Liquidity — fires on covenant_breach or liquidity_crisis
+    3. Rule 3 (MEDIUM): Downgrade/Rating Watch — fires on downgrade or rating_watch
+    4. Rule 4 (MEDIUM): Negative Sentiment Spike — fires when sentiment < -0.5 AND credit_relevant_count ≥ 3
+    5. Rule 5 (HIGH): Multiple Events — fires when 2+ alerts triggered in past 48h
+  - `AlertRule` class with evaluation + error handling
+  - **12 unit tests** covering all rules, negative cases, no false positives
+  
+  **Alert Generator:**
+  - `src/alerts/generator.py` — `generate_alerts(obligor_id)` orchestrates full flow
+    - Fetch daily signals → check cache + new articles → get summary (fallback if Groq fails) → evaluate rules → create alerts
+    - `check_all_obligors()` — batch processor with per-obligor error isolation
+    - Deduplication: 24h window per rule, prevents alert spam
+    - Fallback mode: creates rule-based alerts even if summarizer fails, marked with `fallback=True` flag
+  - **8 unit tests** covering alert creation, dedup, fallback, early returns, batch processing
+  
+  **Scheduler (APScheduler):**
+  - `src/alerts/scheduler.py` — `ScheduledAlertJob` class with two-tier alert cycles
+    - `get_prioritized_obligors()` — assigns HIGH/NORMAL tiers based on 7-day alerts (≥2) or sentiment (<-0.4)
+    - Job 1: `high_risk_alert_cycle()` — every 4 hours for HIGH tier
+    - Job 2: `normal_alert_cycle()` — every 6 hours for NORMAL tier
+    - Rate limit budget check: logs estimated calls vs remaining daily (1000/day limit)
+    - Inter-call sleep: 15s between Groq calls to throttle rate limiting
+    - Per-obligor error isolation: continues on individual failures
+  - **10 unit tests** covering tier assignment, cycle execution, scheduling, sleep behavior, errors
+  - `apscheduler>=3.10.0` added to requirements.txt
+  
+  **FastAPI Endpoints:**
+  - `src/api/alerts.py` — REST API with 3 endpoints
+    1. `GET /api/alerts` — list alerts with filters (severity, date_from, date_to, obligor_id), pagination
+    2. `GET /api/alerts/{id}` — single alert details with source articles
+    3. `GET /api/obligors/{id}/summary` — latest risk summary (generates or uses cached)
+  - Pydantic models: `AlertResponse`, `AlertListResponse`, `SummaryResponse`
+  - **10 unit tests** covering filtering, pagination, 404s, response schema validation
+  
+  **Integration Tests:**
+  - `tests/integration/test_alerts_e2e.py` — 8 end-to-end tests
+    - Full flow: articles → signals → summary → alert creation
+    - Deduplication across multiple runs
+    - Prioritized obligor tier assignment
+    - Scheduler lifecycle
+    - Both cycle execution
+    - Alert field population
+    - Summarizer fallback
+    - Multi-obligor independence
+  
+  **Summary of Changes:**
+  - 8 new modules (summarizer, rules, generator, scheduler, API + 3 test files)
+  - 8 major git commits (one per task, TDD strict)
+  - 57 new unit + integration tests
+  - Constants file updated with 41 new definitions (Groq models, rule names, thresholds, scheduler timing)
+  - Full test suite: **246 tests, all passing** (57 new from Week 5)
+  - Database: `summaries` table operational, migration runner integrated
+  - All Groq models configured (primary + fallback with retry logic)
+
+### Blockers / Open Questions
+- None — full Phase 5 delivered
+
+### Next Steps
+- Phase 6: Dashboard (Streamlit + Plotly)
+  - Portfolio overview page: KPI cards, risk heatmap, 7-day trend
+  - Alert feed: real-time, color-coded by severity
+  - Company drill-down: sentiment chart, summary, events, alerts
+  - Integration with FastAPI endpoints
+
+---
+
 ## Session 11 — 2026-04-01 (Week 4 Complete)
 
 ### Completed
