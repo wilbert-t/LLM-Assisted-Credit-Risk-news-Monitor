@@ -1036,55 +1036,74 @@ Cowork Action:
 
 #### 💬 Claude Code Task: Create Summarizer
 ```bash
+python
 # File: src/rag/summarizer.py
 
+# Dependencies:
+#   pip install groq
+
+# Model config (two-tier):
+#   PRIMARY_MODEL   = "llama-3.3-70b-versatile"   # quality, 1000 RPD
+#   FALLBACK_MODEL  = "llama-3.1-8b-instant"       # backup on 429, 14400 RPD
+
+# --- Rate limit-aware Groq caller ---
+# Function: call_groq_with_backoff(prompt, retries=3) -> str
+#   - Try PRIMARY_MODEL first
+#   - On RateLimitError (429): wait 20s × attempt, retry
+#   - After max retries on primary: switch to FALLBACK_MODEL, reset retry counter
+#   - Log every retry + which model was used
+#   - Raise final exception only if both models exhausted
+
+# --- Throttle between batch calls ---
+# Constant: INTER_CALL_SLEEP = 15  # seconds
+#   - Enforces ~4 calls/min max → stays under 12,000 TPM for 70b
+#   - Applied in generator.py loop, not inside summarizer
+
+# --- Has-new-articles check (skip unnecessary API calls) ---
+# Function: has_new_articles_since(obligor_id: int, last_summary_ts: datetime) -> bool
+#   - Query articles table: COUNT(*) where obligor_id=X and published_at > last_summary_ts
+#   - Returns True only if count > 0
+#   - Called BEFORE entering summarizer
+
+# --- Main summarizer ---
 # Function: summarize_obligor_risk(obligor_id: int, days: int = 7) -> Dict
 #   - Retrieve top 10 relevant articles using RAG
-#   - Format prompt with articles
-#   - Call Claude API to generate summary
+#   - Format prompt with articles + company name
+#   - Call call_groq_with_backoff()
 #   - Parse structured JSON response
-#   - Return: {company, summary, key_events, risk_assessment}
+#   - Return: {company, summary, key_events, risk_assessment, model_used}
 
 # Prompt template:
-#   "You are a credit analyst. Analyze these articles about [Company].
-#    Output JSON: {summary, key_events, risk_level, concerns, positive_factors}"
+#   System: "You are a credit risk analyst. Respond ONLY with valid JSON.
+#            No preamble, no markdown, no backticks."
+#   User:   "Analyze these articles about [Company].
+#            Output JSON: {summary, key_events, risk_level,
+#                          concerns, positive_factors}"
 
-# Caching:
-#   - Cache summaries by obligor_id + date
-#   - Don't re-run if cached and < 1 hour old
+# Caching (FIXED TTL):
+#   - Cache key: f"{obligor_id}:{date}:{article_hash}"
+#     where article_hash = hash of latest article IDs (recompute if articles changed)
+#   - TTL for 4h cycle (high-risk):  230 minutes
+#   - TTL for 6h cycle (normal):     350 minutes
+#   - Don't re-run if cache hit AND TTL not expired
 
 # Tests:
 #   - test_summarize_with_articles
 #   - test_summary_structure (has all required fields)
+#   - test_fallback_on_rate_limit (mock 429, assert fallback model used)
+#   - test_cache_skips_api_call (warm cache → no Groq call)
+#   - test_has_new_articles_since (no new articles → skip)
 ```
 
 #### 💬 Claude Code Task: Create Baseline Comparisons (NEW - DIFFERENTIATION #2)
 ```bash
 # File: src/models/baselines.py
+# (No changes — pure math, no API calls)
 
-# Function: sentiment_baseline(articles: List[Dict]) -> float
-#   - Just average sentiment score (no weighting)
-#   - Returns simple mean of all sentiment scores
-#   - Use as comparison: "My weighted system beats naive avg by X%"
-
-# Function: frequency_baseline(obligor_id: int, days: int) -> float
-#   - More articles = higher risk (naive assumption)
-#   - Score = article_count / threshold
-#   - Use as comparison: "My signal beats 'more news = more risk' baseline"
-
-# Function: merton_distance_to_default(obligor_id: int) -> float
-#   - Calculate from stock price + debt (if available)
-#   - Academic baseline for credit risk
-#   - Use as comparison: "My NLP signals improve on traditional Merton model"
-
-# Function: compare_baselines(obligor_id: int, days: int = 7) -> Dict
-#   - Compare my alerts vs all 3 baselines
-#   - Returns: {my_score, sentiment_baseline, frequency_baseline, merton_baseline, improvement_pct}
-
-# Tests:
-#   - test_sentiment_baseline
-#   - test_frequency_baseline
-#   - test_compare_baselines
+# Function: sentiment_baseline(articles)     -> float
+# Function: frequency_baseline(obligor_id)   -> float
+# Function: merton_distance_to_default(...)  -> float
+# Function: compare_baselines(obligor_id)    -> Dict
 ```
 
 **Why this matters:**
@@ -1120,6 +1139,7 @@ Cowork Action:
 #     - 2+ different event types in 48 hours
 #     - Severity: HIGH
 
+
 # Class: AlertEngine
 #   - evaluate(obligor_id: int, date: datetime) -> List[Alert]
 #     * Get signals for obligor
@@ -1141,6 +1161,14 @@ Cowork Action:
 #     * Store in alerts table
 #     * Add metadata (articles, events)
 
+# File: src/alerts/generator.py
+
+# Function: generate_alerts(obligor_id: int) -> None
+#   - NEW: check has_new_articles_since() BEFORE calling summarizer
+#   - If no new articles AND cached summary exists → run rules on cache, skip Groq
+#   - If new articles OR no cache → call summarize_obligor_risk() with 15s pre-sleep
+#   - Run AlertEngine, store alerts with deduplication
+
 # Function: check_all_obligors() -> None
 #   - For each obligor
 #   - Generate alerts
@@ -1157,15 +1185,43 @@ Cowork Action:
 ```bash
 # File: src/alerts/scheduler.py
 
-# Using APScheduler:
-#   - Run alert check every 6 hours
-#   - Run daily aggregation at 9 AM
-#   - Log all activity
-#   - Handle errors (don't crash, log and continue)
+# Dependencies: APScheduler, groq
 
-# Error notification:
-#   - If job fails, write to alerts table with error
-#   - Log to file for manual review
+# --- Priority queue ---
+# Function: get_prioritized_obligors() -> List[Tuple[int, str]]
+#   - Query: SELECT obligor_id, COUNT(alerts) as alert_count,
+#                   MIN(sentiment_score) as min_sentiment
+#            GROUP BY obligor_id
+#            ORDER BY alert_count DESC, min_sentiment ASC
+#   - Returns list of (obligor_id, tier) where tier = "high" | "normal"
+#   - Tier logic: alert_count >= 2 OR min_sentiment < -0.4 → "high"
+
+# --- Two separate scheduled jobs ---
+
+# Job 1: high_risk_alert_cycle()
+#   - Schedule: every 4 hours  (cron: "0 */4 * * *")
+#   - Filter: only obligors where tier == "high"
+#   - Loop with 15s sleep between Groq calls
+#   - Calls: has_new_articles_since() → summarize → AlertEngine
+#   - On exception per obligor: log error, continue (don't crash job)
+
+# Job 2: normal_alert_cycle()
+#   - Schedule: every 6 hours  (cron: "0 */6 * * *")
+#   - Filter: only obligors where tier == "normal"
+#   - Same loop + sleep pattern as above
+#   - Skips obligors already processed by high_risk_alert_cycle in same window
+
+# Job 3: daily_aggregation()
+#   - Schedule: daily at 9 AM (existing — no change)
+
+# Error handling:
+#   - Per-obligor try/except: log to file, continue loop
+#   - If Groq fails after all retries: write error alert to DB, continue
+#   - Job-level try/except: log critical failure, do NOT raise (keeps scheduler alive)
+
+# Rate limit budget check (logged at start of each cycle):
+#   - Log estimated calls this cycle vs remaining RPD
+#   - Warn if projected calls > 80% of daily budget
 ```
 
 ### DAY 34: FastAPI Alert Endpoints

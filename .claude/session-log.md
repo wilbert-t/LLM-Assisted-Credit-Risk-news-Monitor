@@ -3,6 +3,36 @@
 
 ---
 
+## Session 11 — 2026-04-01 (Week 4 Complete)
+
+### Completed
+- **Phase 4: RAG System** — full pipeline merged to `main`, 189 tests passing
+  - `docker-compose.yml` — swapped to `pgvector/pgvector:pg15`
+  - `src/db/models.py` — `Embedding` ORM model with `Vector(384)`, `UniqueConstraint(article_id, chunk_index)`, IVFFlat index
+  - `src/db/connection.py` + `tests/conftest.py` — enable vector extension before `create_all`
+  - `infra/migrations/add_pgvector.sql` — reference migration
+  - `src/models/embeddings.py` — `EmbeddingGenerator` (all-MiniLM-L6-v2, 384-dim, lazy-loaded)
+  - `src/models/chunker.py` — `chunk_text(text, chunk_size=300, overlap=50) -> List[str]`
+  - `src/models/embedding_pipeline.py` — `embed_and_store_articles(article_ids, db)` with dedup guard
+  - `scripts/generate_embeddings.py` — CLI runner with `--limit`, idempotent
+  - `src/rag/retriever.py` — `ArticleRetriever`: cosine search + obligor/date filter, IVFFlat probes fix
+  - `notebooks/week4_rag_demo.ipynb` — 3-cell demo
+  - **1,196 article chunks embedded** in `embeddings` table
+  - Retriever smoke test: returns results with similarity ~0.58 for "bankruptcy liquidity crisis"
+
+### Blockers / Open Questions
+- Summarizer (LLM-synthesized credit risk summary from retrieved chunks) deferred to Week 5
+- IVFFlat `lists=100` is oversized for current 1,196-row dataset; fine until production scale
+
+### Next Step
+- Phase 5: Alerts + Summarizer
+  - LLM summarizer: prompt Claude/GPT-4 with top-K retrieved chunks → credit risk narrative
+  - Alert rules: threshold on risk_score + sentiment triggers alert creation
+  - FastAPI endpoints: GET /alerts, GET /obligors/{id}/summary
+  - Scheduled job: nightly batch (score → embed → summarize → alert)
+
+---
+
 ## Session 10 — 2026-03-31
 
 ### Completed

@@ -2,7 +2,7 @@
 
 ## Session Start — do this first
 1. Read `.claude/session-log.md` → know where we left off
-2. Read last 20 lines of `.claude/lessons.md` → avoid repeat mistakes
+2. Read last 30 lines of `.claude/lessons.md` → avoid repeat mistakes
 3. Run `docker-compose ps` → confirm DB + Qdrant are up
 4. Confirm venv is active: `source venv/bin/activate`
 
