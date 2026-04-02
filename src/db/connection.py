@@ -88,6 +88,19 @@ def init_db() -> None:
             conn.commit()
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created (or already exist).")
+
+        # Run custom migrations
+        from pathlib import Path
+        migration_path = Path(__file__).parent.parent.parent / "infra" / "migrations" / "add_summaries_table.sql"
+        if migration_path.exists():
+            with open(migration_path) as f:
+                migration_sql = f.read()
+            with engine.connect() as conn:
+                conn.execute(text(migration_sql))
+                conn.commit()
+            logger.info("Custom migrations executed.")
+        else:
+            logger.warning(f"Migration file not found at {migration_path}")
     except SQLAlchemyError as e:
         logger.error(f"Failed to initialize database: {e}")
         raise

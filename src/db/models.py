@@ -216,6 +216,40 @@ class Alert(TimestampMixin, Base):
         )
 
 
+class Summaries(TimestampMixin, Base):
+    """
+    Cached LLM-generated credit risk summaries.
+    Keyed by (obligor_id, cache_date, article_hash) to enable reuse
+    when articles haven't changed.
+    """
+
+    __tablename__ = "summaries"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    obligor_id = Column(
+        Integer,
+        ForeignKey("obligors.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    cache_date = Column(Date, nullable=False)
+    article_hash = Column(String(64), nullable=False)
+    summary_json = Column(JSON, nullable=False)
+    model_used = Column(String(50), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("obligor_id", "cache_date", "article_hash",
+                         name="uq_summaries_obligor_date_hash"),
+        Index("idx_summaries_obligor_date", "obligor_id", "cache_date"),
+        Index("idx_summaries_created_at", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<Summaries id={self.id} obligor_id={self.obligor_id} "
+            f"cache_date={self.cache_date} model_used={self.model_used}>"
+        )
+
+
 class ObligorDailySignals(TimestampMixin, Base):
     """
     Aggregated daily credit-risk signals for an obligor.
